@@ -1,0 +1,1 @@
+Ce script ferme (sans enregistrer!) tous les documents ouverts а l'exception de l'image active. ~ Fermer tous les autres ~ ß

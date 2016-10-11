@@ -1,0 +1,1 @@
+This script opens all the files from your "Open Recently Edited" list. ~ Open All Recent ~ ß

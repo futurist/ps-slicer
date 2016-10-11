@@ -1,0 +1,42 @@
+
+#left{
+	width:343px; 
+	height:156px; 
+	background-image: url(../images/bg1.jpg);
+	background-q: 1;
+	background-repeat: repeat-x;
+}
+#left .top{
+	width:227px; 
+	height:32px; 
+	margin:3px 10px 17px 106px; 
+}
+.font5{
+	font: 14px/24px "STSong"; 
+	color: #DBDCE3; 
+	text-indent: 10px; 
+}
+.img6{
+	float:left; 
+}
+.input1{
+	border:1px solid #D20000; 
+	border-left:1px solid #000000; 
+	border-right:3px solid #26E653; 
+	border-top:1px solid #8D57E6; 
+	border-bottom:1px solid #2626CB; 
+	width:193px; 
+	height:14px; 
+	padding:4px 0px 0px 7px; 
+	margin:11px 31px 6px 11px; 
+	float:left; 
+}
+.font8{
+	font: 14px/normal "STSong"; 
+	color: #DBDCE3; 
+}
+#left .mit{
+	width:70px; 
+	height:30px; 
+	margin:5px 5px 2px 268px; 
+}

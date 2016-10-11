@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Script Arsenal Setup</title>
+<link href="../px/page.css" rel="stylesheet" type="text/css">
+<!-- saved from url=(0013)about:internet -->
+<script language="JavaScript">
+<!--
+function langMenu( ){ 
+if (document.langForm.jumpToLang.value != "null") {
+var usrLang = document.langForm.jumpToLang.value;
+var docPathArray = document.URL.split("\/");
+docPathArray = docPathArray[docPathArray.length-1].split("\\");
+var pageName = docPathArray[docPathArray.length-1];
+var langPage = "../"+usrLang+"/"+pageName;
+document.location.href = langPage
+}
+}
+
+function rediretToPage () {
+if ( getCookie("lastSAPageD1") != null ) {
+		savedPage = getCookie("lastSAPageD1");
+		if ( savedPage!=document.URL ) {
+		document.location.href = savedPage
+		}
+	}
+}
+rediretToPage ()
+
+function getCookie( name ) {
+    var start = document.cookie.indexOf( name + "=" );
+    var len = start + name.length + 1;
+    if ( ( !start ) && ( name != document.cookie.substring( 0, name.length ) ) ) {
+        return null;
+    }
+    if ( start == -1 ) return null;
+    var end = document.cookie.indexOf( ';', len );
+    if ( end == -1 ) end = document.cookie.length;
+    return unescape( document.cookie.substring( len, end ) );
+}
+//-->
+</script>
+</head><body>
+
+<table width="950" align="center" cellpadding="6">
+<tr>
+  <td height="40" align="center" valign="bottom">
+<script language="JavaScript">
+<!--
+ document.write (' <form name="langForm"  class="text"> '+
+ '<select name="jumpToLang" class="lForm" onChange="langMenu()">'+    
+ '<option value="en" selected>English</option>'+ 
+ '<option value="de">German - Deutsch</option> '+
+ '<option value="ru">Russian - Русский</option> '+
+ '</select> '+
+ '</form> '
+ )
+ //-->
+</script>
+<noscript>
+<a href="../en/index.htm"><img src="../px/lang-en.png" width="30" height="20" border="0" style="padding-right:24px"></a>
+<a href="../de/index.htm"><img src="../px/lang-de.png" width="30" height="20" border="0" style="padding-right:24px"></a> 
+<a href="../ru/index.htm"><img src="../px/lang-ru.png" width="30" height="20" border="0"></a>
+</noscript>			  
+  </td>
+  <td height="40" colspan="2"><h1>Script Arsenal Setup</h1></td>
+</tr>
+<tr>
+      <td valign="top"><div class="toc">
+        <table border="0" cellspacing="0" cellpadding="2">
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="index.htm">Getting started</a></td>
+          </tr>
+  <tr>
+    <td><ul>
+      <li> <a href="index.htm">Setup</a></li>
+      <li><a href="catalog.htm">Script Arsenal Dialog</a></li>
+      <li><a href="script-to-menu.htm">Add Scripts to Menu</a></li>
+      <li><a href="script-to-action.htm">Add Scripts to Actions</a></li>
+      <li><a href="manage-scripts.htm">Handling Scripts</a></li>
+      <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+      </ul></td>
+    </tr>
+  <tr>
+    <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="scripts.htm">Scripts</a></td>
+    </tr>
+<tr>
+      <td>
+      <ul>
+          <li><a href="aerograph.htm">Aerograph</a></li>
+          <li><a href="burnt-edges.htm">Burnt Edges</a></li>
+          <li><a href="close-others.htm">Close Other Docs</a></li>
+          <li><a href="confetti.htm">Confetti</a></li>
+          <li><a href="cross-processing.htm">Cross Processing</a></li>
+          <li><a href="disk-label.htm">Disk Label</a></li>
+          <li><a href="extend-canvas.htm">Extend Canvas</a></li>
+          <li><a href="film-edges.htm">Film Edges</a></li>
+          <li><a href="illustration.htm">Illustration</a></li>
+          <li><a href="open-all-recent.htm">Open All Recent</a></li>
+          <li><a href="quick-shadow.htm">Quick Shadow</a></li>
+          <li><a href="torn-edges.htm">Torn Edges</a></li>
+          <li><a href="water-drops.htm">Water Drops</a></li>
+          <li><a href="wavy-edges.htm">Wavy Edges</a></li>
+        </ul>
+        </td>
+      </tr>
+          <tr>
+            <td class="chapter"><a href="http://script-arsenal.com/buy-script-arsenal.htm">Get full version</a></td>
+  </tr>
+        </table>
+    </div></td>
+      <td valign="top" class="text"><p>&quot;Script Arsenal&quot; is a set of script for various Photoshop tasks.</p>
+        <p>How to set it up:</p>
+        <p>1. Unzip the <nobr>&quot;script-arsenal.zip&quot;</nobr> file to your computer's hard drive.</p>
+        <p>2. In the Photoshop menu, go to &quot;File  &gt; Open &quot;, browse to the &quot;Script Arsenal&quot; folder and choose the &quot;scriptArsenal.jsx&quot; file.</p>
+        <p> 3. In the dialog that opens,  click the <img src="../px/ico/global-options.png" width="19" height="17" align="absmiddle"> &quot;Options&quot; button (fig. 1).
+        <p>4. In the &quot;Language&quot; menu, choose a language for the &quot;Script Arsenal&quot; dialogs (fig. 2).
+        <p>5. Make sure that &quot;Add Script Arsenal to the main menu&quot; option is selected (fig. 3).
+        <p>6. Click &quot;OK&quot; to confirm the settings.
+        <p>7. Restart  Photoshop and find the  
+          &quot;Script Arsenal&quot; in the menu: &quot;File  &gt; Scripts   &gt; Script Arsenal&quot;.
+        <p>For faster access to the script catalog, it is also recommended to assign to this script a keyboard shortcut and/or  to add it into the Actions panel.    
+        <table class="arr">
+          <tr align="center" valign="middle">
+            <td align="right">&nbsp;</td>
+            <td align="left"><a href="catalog.htm"><img src="../px/next.gif" alt="Next" width="18" height="19"></a></td>
+          </tr>
+        </table>
+        <p></td>
+  <td valign="top"><p><img src="../px/sa-setup.png" alt="Select Photo Effects tab" width="316" height="538"><br>
+  </p></td>
+  </tr>
+
+  </table>
+</body>
+</html>

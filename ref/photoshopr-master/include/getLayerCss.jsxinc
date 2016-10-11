@@ -1,0 +1,753 @@
+﻿#script "Get Layer FX as CSS"
+
+//Layer fx function
+(function(P){
+extend(P, {
+    prefixes : ['-webkit-','-moz-','-ms-','-o-'],
+    cssModel : {
+        'box-shadow':[], 
+        'text-shadow':[],
+        'color':[],
+        'background':[],
+        'width':null,
+        'height':null,
+        'border-radius':null,
+        'text-decoration':null,
+        'letter-spacing':null,
+        'font-family':[],
+        'font-size':null,
+        'line-height':1,
+        'font-weight':null,
+        'font-style':null,
+        'font-variant':null,
+        'text-transform':null,
+        'text-align':'left',
+        'text-align-last':null,
+        'text-indent':null,
+        'padding':null,
+        'opacity':1,
+        'transform':[]
+    },
+    
+    //Fill model with properties
+    _initActiveLayer: function(){
+        var self = this, o = self.settings;
+        //try to get active layer properties
+        try {
+            self.layer = app.activeDocument.activeLayer;
+            if (!self.layer) {
+                return '/*No layer selected*/'
+            }
+            self.lFX = self.getActiveLayerProperty( c2t( 'Lefx' ) );
+            if (!self.lFX) {
+                result += '/*No FX found*/\n'
+            }; //FX not found
+        } catch (err) {
+            //No document opened or active layer selected
+           alert("Something gone wrong when tried to parse FX of active layer.");
+           return '';
+        }
+        self.lKind = self.layer.kind,
+        self.lOpacity = self.layer.opacity,
+        self.lFill = self.layer.fillOpacity,
+        self.lMode = self.layer.mode,
+        self.lVisible,
+        self.lText,
+        self.lShape;    
+        return self;
+    },
+    
+    
+    /*==============================================Parsing==================================*/
+    //Main parse function: parses everything in accordance with type of selected layer
+    parseCSSModel: function(){     
+        var self = this, o = self.settings;
+        
+        //TODO: think about layer blending mode itself. Probably needed to insert the most bottom background to merge with.
+        switch (self.lKind){
+            case LayerKind.SOLIDFILL:
+                self.parseSolidFill();
+                break;
+            case LayerKind.GRADIENTFILL:                
+                self.parseGradientFill();
+                break;
+            case LayerKind.TEXT:
+                if (o.textProperties) self.parseText();
+                break;
+            case LayerKind.NORMAL:
+            case LayerKind.PATTERNFILL:
+                //Parse sprite, if needed
+                self.parseBMP();
+                break;
+            default:
+                //TODO: there is effect layer. Presumably, merge this down and copy sprite  or just parse size, opacity, fx etc
+                return self;
+        };
+        self.parseVectorMask();
+        if (self.lFX) self.parseFx();
+        self.parseOpacity();
+        return self;        
+    },
+
+    //Makes model based on FX
+    parseFx : function(){
+        var self = this;
+        for (var i = self.lFX.count; i--;){ //For every FX
+                var key = self.lFX.getKey(i), fxprop;            
+                try {
+                    var fxprop = self.lFX.getObjectValue(key); //Get FX Object
+                } catch (err) {
+                    continue;
+                    //$.writeln("I can't get layer fx. I'm sorry.");
+                }   
+                //$.writeln(t2s(key));
+                self.proccessFx[t2s(key)] && self.proccessFx[t2s(key)](fxprop);
+        }
+    },
+
+
+    //Make model of solid-fill-layer properties
+    parseSolidFill : function(){
+        var self = this, l = self.layer;
+        self.lContent = self.getActiveLayerDescriptor(s2t( "contentLayer" ));        
+        try { 
+            var colr = Color.create(
+            self.lContent.getList(s2t('adjustment')).getObjectValue(0).getObjectValue(s2t('color')),
+            {
+                opacity: self.layer.fillOpacity,
+                mode: self.lMode
+            });
+            if (P.settings.comments) colr.set("comment", "Solid Color fill layer");
+            self.cssModel.background.push(colr);
+        }        
+        catch (err) {self.cssModel.background.push("I can't grab solid fill color")}
+        return self;
+    },
+
+
+
+    //Make model of gradient-fill-layer properties
+    parseGradientFill : function(){
+        var self = this, l = self.layer;
+        self.lContent = self.getActiveLayerDescriptor(s2t( "contentLayer" ));        
+        //try {
+            var rawDesc =self.lContent.getList(s2t("adjustment")).getObjectValue(0);
+            var gradDesc = rawDesc.getObjectValue(s2t("gradient"));
+            var type = t2s(rawDesc.getEnumerationValue(s2t("type"))),           
+            angle = rawDesc.getUnitDoubleValue(s2t('angle'));
+            var reverse = false;
+            try { reverse = rawDesc.getBoolean(s2t("reverse"));} catch (err) {};
+            var grad = Gradient.create(gradDesc, {
+                opacity: self.lFill,
+                mode: self.lMode,
+                reversed: reverse
+            });
+            switch(type){
+                case "radial":
+                    grad.set("type", "radial");
+                    break;
+                case "angle":
+                    //Get out
+                    grad.set("type", "angle");
+                    break;
+                case "reflected":
+                    //do 2 linears
+                    grad.set("type", "reflected");
+                    break;
+                case "diamond":
+                    //Omg gtfo
+                    grad.set("type", "diamond");
+                    break;
+                default: //supposed to be linear
+                    grad.set({
+                        type: "linear", 
+                        angle: angle
+                    });
+            }            
+            if (P.settings.comments) grad.set("comment", "Gradient fill layer");
+            self.cssModel.background.push(grad);
+        //}        
+        //catch (err) {self.cssModel.background.push("I can't grab gradient fill.")}
+        return self;
+    },
+
+    
+    //Just defines an opacity of layer that will be applied to css, in case of text layer.
+    parseOpacity : function(){
+        var self = this, l = self.layer;
+        self.cssModel.opacity = l.opacity/100;
+        return self;
+    },
+
+    //Parse shape: if rectangle, make border-radius & padding.
+    parseVectorMask : function(){
+        var self = this, l = self.layer, multishape = false;
+        
+        //Create shape model
+        var desc = self.getActiveVectorMaskDescriptor();
+        var shapesList = desc.getObjectValue(s2t("pathContents")).getList(s2t("pathComponents"));
+        if (shapesList.count > 1) { //if multishape
+            multishape = true;
+            self.combineActiveLayerPaths();
+            desc = self.getActiveVectorMaskDescriptor();
+            shapesList = desc.getObjectValue(s2t("pathContents")).getList(s2t("pathComponents"));
+        }        
+        var shape = Shape.create(shapesList.getObjectValue(0));
+        if (multishape) self.historyStep(-1); //return combining path to initial state
+        
+        //log(self.layer.bounds);
+        
+        //TODO: define, is it rect? no? path?
+    
+        
+    },
+    
+    //Defines is path rect
+    isRect : function(shape){
+        //Expert rules:
+        //If is not closed path - GTFO
+        if (!shape.isClosed) return false;   
+        
+        //If points more than 4 and no smooth angles
+        
+        //If not convex hull - bye bye
+        
+        //If points not on bounds - it is not rect
+    },
+
+    //Shape is a rectangle - parse it's size, padding & border-radius
+    parseRect: function(){
+    },
+    
+    
+    //Parse vector-mask as SVG
+    parsePath : function(){
+        var path = "";
+        return path;
+    },
+
+
+    parseSize : function(){
+    },
+
+
+    //Fill model of character & paragraph properties
+    parseText : function(){
+        var self = this, l = self.layer, o = self.settings;
+        var textObj = l.textItem;
+        //log (textObj);
+        /*//Alternate, raw way of getting text properties
+            var desc = self.getLayerDescriptor(s2t( "textLayer" ))
+            log(desc.getObjectValue(s2t("textKey")))*/
+        self.cssModel['color'] = new Color({color: textObj.color});
+        //TODO: check auto-leading, auto kerning, antialias method
+        self.cssModel['font-size'] = textObj.size;
+        //TODO: auto-leading amount
+        self.cssModel['letter-spacing'] = parseInt(textObj.tracking)*.001 + 'em';
+        self.cssModel['transform'].push({
+            type: "scale",
+            y: textObj.verticalScale * .01,
+            x: textObj.horizontalScale * .01
+        });
+        //TODO: baseline shift, contents
+        self.cssModel['line-height'] = textObj.leading;
+        //TODO: auto-leading, ligatures, altligatures
+        //TODO: what is old-style? - it's king of open type properties
+        //TODO: vertical direction        
+        //TODO: FONT WEIGHT IS HERE
+        //TODO: Faux bold, faux italic
+        try {
+            var font = app.fonts.getByName(textObj.font);
+            log(font);
+            self.cssModel['font-family'] = font.family;            
+            //TODO: parsing of weight & style
+            var fontWeights = {
+                "lighter" : "light, thin, ultrathin",
+                //{"normal" : "medium, normal, regular".split(", ")},
+                "bold" : "bold, semibold, demibold",
+                "bolder" : "black, ultrabold"
+            };
+            var fontStyles = {"italic" : "slanted, italic, oblique"};
+            var fontStyleTokens = font.style.toLowerCase().split(' ');    
+            for (var i = fontStyleTokens.length; i--;){
+                for (var weight in fontWeights){
+                    if (fontWeights[weight].indexOf(fontStyleTokens[i]) >= 0){
+                        self.cssModel['font-weight'] = weight;
+                        break;
+                    }
+                }
+            };
+            for (var i = fontStyleTokens.length; i--;){
+                for (var style in fontStyles){
+                    if (fontStyles[style].indexOf(fontStyleTokens[i]) >= 0){
+                        self.cssModel['font-style'] = style;
+                        break;
+                    }
+                }
+            }
+            if (textObj.fauxBold){ 
+                self.cssModel['font-weight'] = "bolder";
+            }
+        } catch (err) {
+            self.cssModel['font-family'] = textObj.font + " /*Font is not found*/";
+        }
+        if (textObj.capitalization == TextCase.SMALLCAPS) {
+            self.cssModel['font-variant'] = "small-caps";
+        } else if (textObj.capitalization == TextCase.ALLCAPS){
+            self.cssModel['text-transform'] = "uppercase"
+        }
+        //TODO: understand types of strikethrough
+        if (textObj.strikeThru != StrikeThruType.STRIKEOFF){
+            self.cssModel['text-decoration'] = "line-through";
+        }
+        if (textObj.underline != UnderlineType.UNDERLINEOFF){
+            self.cssModel['text-decoration'] += " underline"
+        }
+        //TODO: language
+        //TODO: nobreak
+        switch (textObj.justification){
+            case Justification.CENTER:
+                self.cssModel['text-align'] = "center"
+                break;
+            case Justification.RIGHT:
+                self.cssModel['text-align'] = "right"
+                break;
+            case Justification.LEFTJUSTIFIED:
+            case Justification.RIGHTJUSTIFIED:
+            case Justification.CENTERJUSTIFIED:
+            case Justification.FULLYJUSTIFIED:
+                self.cssModel['text-align'] = "justify"
+            case Justification.RIGHTJUSTIFIED:
+                self.cssModel['text-align-last'] = "right";
+            case Justification.CENTERJUSTIFIED:
+                self.cssModel['text-align-last'] = "center";
+            case Justification.FULLYJUSTIFIED:
+                self.cssModel['text-align-last'] = "justify";
+                break;
+        };
+        self.cssModel['text-indent'] = parseInt(textObj.firstLineIndent) && textObj.firstLineIndent;
+        //Special paragraph properties
+        if (textObj.kind == TextType.PARAGRAPHTEXT){
+            self.cssModel['padding-left'] = parseInt(textObj.leftIndent) && textObj.leftIndent;
+            self.cssModel['padding-right'] = parseInt(textObj.rightIndent) && textObj.rightIndent;
+            self.cssModel['padding-top'] = parseInt(textObj.leftIndent) && textObj.leftIndent;
+            self.cssModel['padding-bottom'] = parseInt(textObj.leftIndent) && textObj.leftIndent;
+            //TODO: width, height
+        }
+        //TODO:handing punctuation
+        //TODO:text composer on paragraph element
+        //TODO:hyphenation & hyphenation properties
+        //TODO:glyph scalings, letter scalings, word scalings
+        //TODO:warp properties        
+        return self;
+    },
+
+    
+    //Parse whether raster layer or pattern fill layer
+    parseBMP: function(){
+    },
+
+
+    //Object with processing funcs of different layer properties. Every function gets p.cssModel filled.
+    proccessFx : {
+        "dropShadow" : function(fxProp){
+            var self = P, o = self.settings;
+            var shadow,
+            enabled = fxProp.getBoolean(s2t("enabled")), 
+            colorRef = fxProp.getObjectValue(s2t("color")), 
+            opacity = fxProp.getUnitDoubleValue(s2t("opacity")), 
+            useGlobalAngle = fxProp.getBoolean(s2t("useGlobalAngle")), 
+            angle = fxProp.getUnitDoubleValue(s2t("localLightingAngle")),
+            distance = fxProp.getUnitDoubleValue(s2t("distance")), 
+            spread = fxProp.getUnitDoubleValue(s2t("chokeMatte")), 
+            blur = fxProp.getUnitDoubleValue(s2t("blur"));   
+            if (!enabled) return;
+            var mode = t2s(fxProp.getEnumerationValue(s2t("mode")));
+            var color = Color.create(colorRef, { opacity : opacity, mode: t2s(mode)});
+            color.set("mode", mode);
+            //get global light angle
+            if (useGlobalAngle) {
+                var ref = new ActionReference();
+                ref.putEnumerated( c2t("Lyr "), c2t("Ordn"), c2t("Trgt") ); 
+                angle = executeActionGet(ref).getInteger(s2t('globalAngle'));
+            }        
+            shadow = new Shadow({
+                color: color
+            });  
+            shadow.angleDistance(angle, distance);
+            shadow.set("isTextShadow", self.lKind == LayerKind.TEXT);            
+            shadow.blurSpread(blur, spread);   
+            if (o.comments) shadow.set("comment", "Drop shadow");
+            if (!shadow.get("isTextShadow")) self.cssModel['box-shadow'][0] = shadow;
+            else self.cssModel['text-shadow'][0] = shadow;
+        },
+
+        "outerGlow" : function(fxProp){//TODO: take into account all glowing options
+            var self = P, o = self.settings;
+            var enabled = fxProp.getBoolean(s2t("enabled")), 
+            colorRef = fxProp.getObjectValue(s2t("color")), 
+            opacity = fxProp.getUnitDoubleValue(s2t("opacity")), 
+            spread = fxProp.getUnitDoubleValue(s2t("chokeMatte")), 
+            blur = fxProp.getUnitDoubleValue(s2t("blur"));
+            if (!enabled) return; 
+            var mode = fxProp.getEnumerationValue(s2t("mode"));
+            var color = Color.create(colorRef, {opacity:opacity, mode: t2s(mode)});
+            var shadow = new Shadow({color: color});
+            shadow.set("isTextShadow", self.lKind == LayerKind.TEXT);        
+            if (o.comments) shadow.set("comment", "Outer glow");    
+            shadow.blurSpread(blur, spread);            
+            if (!shadow.get("isTextShadow")) self.cssModel['box-shadow'][1] = shadow;
+            else self.cssModel['text-shadow'][1] = shadow;
+            
+        },
+
+        "innerShadow" : function(fxProp){
+            var self = P, o = self.settings;
+            var enabled = fxProp.getBoolean(s2t("enabled")),
+            colorRef = fxProp.getObjectValue(s2t("color")), 
+            opacity = fxProp.getUnitDoubleValue(s2t("opacity")), 
+            spread = fxProp.getUnitDoubleValue(s2t("chokeMatte")), 
+            blur = fxProp.getUnitDoubleValue(s2t("blur")),
+            useGlobalAngle = fxProp.getBoolean(s2t("useGlobalAngle")), 
+            angle = fxProp.getUnitDoubleValue(s2t("localLightingAngle")),
+            distance = fxProp.getUnitDoubleValue(s2t("distance"));        
+            if (!enabled) return;    
+            if (useGlobalAngle) {
+                var ref = new ActionReference();
+                ref.putEnumerated( c2t("Lyr "), c2t("Ordn"), c2t("Trgt") ); 
+                angle = executeActionGet(ref).getInteger(s2t('globalAngle'));
+            }
+            var mode = fxProp.getEnumerationValue(s2t("mode"));
+            var color = Color.create(colorRef, {opacity:opacity, mode: t2s(mode)});
+            var shadow = new Shadow({color: color, inset: true});
+            shadow.set("isTextShadow", self.lKind == LayerKind.TEXT); 
+            if (o.comments) shadow.set("comment", "Inner shadow");           
+            shadow.blurSpread(blur, spread);        
+            shadow.angleDistance(angle, distance);    
+            if (!shadow.get("isTextShadow")) self.cssModel['box-shadow'][3] = shadow;
+            else self.cssModel['text-shadow'][3] = shadow;
+        },
+
+        "innerGlow" : function(fxProp){//TODO: take into account all glowing options
+            var self = P, o = self.settings;
+            var styleValue = "", //resulting style
+            enabled = fxProp.getBoolean(s2t("enabled")), 
+            mode, //TODO: take into account
+            colorRef = fxProp.getObjectValue(s2t("color")), 
+            opacity = fxProp.getUnitDoubleValue(s2t("opacity")), 
+            spread = fxProp.getUnitDoubleValue(s2t("chokeMatte")), 
+            blur = fxProp.getUnitDoubleValue(s2t("blur"));
+            if (!enabled) return;      
+            var mode = fxProp.getEnumerationValue(s2t("mode"));
+            var color = Color.create(colorRef, {opacity:opacity, mode: t2s(mode)});
+            var shadow = new Shadow({color: color, inset: true});
+            shadow.set("isTextShadow", self.lKind == LayerKind.TEXT); 
+            if (o.comments) shadow.set("comment", "Inner glow");           
+            shadow.blurSpread(blur, spread);    
+            if (!shadow.get("isTextShadow")) self.cssModel['box-shadow'][2] = shadow;
+            else self.cssModel['text-shadow'][2] = shadow;
+        },
+        
+        //Stroke
+        "frameFX": function(fxProp){
+            //TODO: make border colouring of gradient
+            try {
+            var enabled = fxProp.getBoolean(s2t("enabled")), 
+            color = fxProp.getObjectValue(s2t("color")), 
+            opacity = fxProp.getUnitDoubleValue(s2t("opacity")), 
+            size = fxProp.getUnitDoubleValue(s2t("size")),
+            position = fxProp.getEnumerationValue(s2t("style"));
+            if (!enabled) return;   
+            var mode = fxProp.getEnumerationValue(s2t("mode"));
+            switch (settings.strokeType){
+                case "box-shadow":                
+                    var preObj = {x:0, y:0};
+                    if (lKind == LayerKind.TEXT) preObj.isTextShadow = true;
+                    else preObj.isTextShadow = false;            
+                    preObj.color = getColor(color, opacity);
+                    switch (t2s(position)){
+                        case "outsetFrame":
+                            if (preObj.isTextShadow) { preObj.blur = size } else { preObj.stroke = size };                        
+                            break;
+                        case "insetFrame":
+                            if (preObj.isTextShadow) { preObj.blur = size } else { preObj.stroke = size; preObj.inset = false }; 
+                            styleValue += "inset 0 0 0 " + size + "px " + getColor(color, opacity);
+                            break;
+                        case "centeredFrame":
+                            if (preObj.isTextShadow) { preObj.blur = size } 
+                            else { 
+                                preObj.stroke = size;
+                            }; 
+                            styleValue += "inset 0 0 0 " + (size*.5) + "px " + getColor(color, opacity) + 
+                            ", 0 0 0 " + (size*.5) + "px " + getColor(color, opacity);
+                            break;
+                    }
+                    cssModel['box-shadow'].push(new Shadow(preObj));
+                    break;
+                case "outline":
+                    styleValue += size + "px solid " + getColor(color, opacity);
+                    cssModel['border'].push(new Border({ }) );
+                    break;
+                default:
+                    styleValue += size + "px solid " + getColor(color, opacity);
+                    cssModel['outline'].push(new Border({ }) );
+                    break;
+                } 
+            } catch (err) {
+                $.writeln(err)
+            }
+        },
+
+
+    //Color overlay
+        "solidFill": function(fxProp){
+            //$.writeln("inside color overlay")
+            var enabled = fxProp.getBoolean(s2t('enabled')),
+            opacity = fxProp.getUnitDoubleValue(s2t('opacity')),
+            mode = fxProp.getEnumerationValue(s2t("mode")),
+            colorDesc = fxProp.getObjectValue(s2t("color"));
+            if (!enabled) return;
+            var color = Color.create(colorDesc, {opacity: opacity, mode:t2s(mode)});
+            if (P.settings.comments) color.set("comment", "Color Overlay");
+            P.cssModel['background'].push(color);            
+        },
+
+    //Gradient overlay of layer
+        "gradientFill": function(fxProp){
+            var self = P, css = P.cssModel, o = P.settings;
+            //$.writeln("Inside gradient overlay");
+            var styleValue = "",
+            gradientRef = fxProp.getObjectValue(s2t('gradient')),
+            enabled = fxProp.getBoolean(s2t('enabled')),
+            opacity = fxProp.getUnitDoubleValue(s2t('opacity')),
+            reverse = fxProp.getBoolean(s2t('reverse')),
+            angle = fxProp.getUnitDoubleValue(s2t('angle')),
+            type = t2s(fxProp.getEnumerationValue(s2t("type"))),
+            align = fxProp.getBoolean(s2t('align')),
+            scale = fxProp.getUnitDoubleValue(s2t('scale')),
+            offset = fxProp.getObjectValue(s2t('offset'));
+            if(!enabled) return;    
+            var mode = fxProp.getEnumerationValue(s2t("mode"));  
+            var grad = Gradient.create(gradientRef, {
+                opacity: opacity
+            });
+            if (!grad) return "/* Cannot create gradient */"; //Cannot create gradient
+            grad.set("mode", t2s(mode));
+            //defining exact size of gradient and render
+            var position = "";//TODO: take into account        
+            switch(type){
+                case "linear":
+                    //do reverse
+                    grad.set({
+                        type: "linear", 
+                        angle: angle,
+                        reversed: reverse
+                        });
+                    break;
+                case "radial":
+                    grad.set("type", "radial");
+                    break;
+                case "angle":
+                    //Get out
+                    grad.set("type", "angle");
+                    break;
+                case "reflected":
+                    //do 2 linears
+                    grad.set("type", "reflected");
+                    break;
+                case "diamond":
+                    //Omg gtfo
+                    grad.set("type", "diamond");
+                    break;
+            }    
+            css['background'].push(grad);
+        }
+
+
+    },
+    
+
+    /*=====================================================Rendering===============================================*/
+    //Returns string from css model through all properties
+    renderCSSModel : function(){
+        var self = this, cssStr = "", css = self.cssModel, 
+        c = P.settings.comments;        
+        cssStr += self.renderBackground();
+        cssStr += self.renderBoxShadows(); //rendering of box-shadow depends on background rendering
+        if (css['opacity'] != 1) cssStr += "opacity: " + (self.cssModel.opacity).toFixed(2).slice(1) + ";\n";
+        cssStr += self.renderSize();
+        if (self.lKind == LayerKind.TEXT) cssStr += self.renderText();
+        return cssStr;
+    },
+    
+    //Returns result of treating background property of cssmodel
+    renderBackground : function(){
+        var self =this, o = self.settings;
+        var result = "";
+        //if (o.mergeBackground){ //render blend modes background
+            result = self.renderMergedBackground();
+        //}
+        /* // always merge bg
+            else { //render normal modes background            
+            if (o.showPrefixes){
+                var isGradientPresent = false; //at least one gradient in model
+                for (var i =  self.cssModel.background.length; i--;){
+                    if (self.cssModel.background instanceof Gradient){
+                        isGradientPresent = true; 
+                        break;
+                    }
+                }
+                if (isGradientPresent){
+                    for (var i = self.prefixes.length; i--;){      
+                        result += self.renderMultipleBackground(self.prefixes[i]);
+                    }
+                }
+            };
+            result += self.renderMultipleBackground();
+        }*/
+        return result;
+    },
+
+    //Merge backgorunds to one through blend modes
+    renderMergedBackground: function(prefix){
+        //TODO: make the most bottom background first (below layer itself, if layer's fill not 100)
+        var self = this, o = self.settings, result = "",
+        delim = self.DELIM, 
+        bgs = self.cssModel["background"];
+        if (bgs.length == 0) return "";
+        var result = 'background:'+ delim;
+        prefix = prefix || "";
+        var resObj = bgs[bgs.length-1];
+        for (var i = bgs.length-1; i--;){
+            //TODO: possible case if 2 gradients has different angle
+            resObj = Graph.applyOverlay(bgs[i], resObj);
+        }
+        self.cssModel.background = [resObj]; //to reuse
+        result += resObj.toCSS(prefix) + ';\n';
+        return result;
+    },
+    
+    //Make backgrounds as multiple background in normal blending mode
+    renderMultipleBackground : function(prefix){
+        var self = this, o = self.settings, 
+        delim = self.DELIM, 
+        bgs = self.cssModel["background"];
+        if (bgs.length == 0) return "";
+        var result = 'background:'+ delim;
+        prefix = prefix || "";
+        for (var i = 0; i < bgs.length; i++){
+            result += bgs[i].toCSS(prefix) + "," + delim;
+        }
+        result = result.substr (0, result.length-2) + ';\n';
+        return result;
+    },
+
+
+    //Returns css box shadows.
+    renderBoxShadows: function(){
+        var self = this, o = self.settings, css = self.cssModel,  result = "";
+        if (o.showPrefixes){
+            for (var i =  self.prefixes.length; i--;){
+                result += self.renderBoxShadow(self.prefixes[i]);
+            }
+        }
+        result += self.renderBoxShadow();        
+        return result;
+    },   
+
+    //Return one box-shadow prefixed
+    renderBoxShadow: function(prefix){
+        var self = this, o = self.settings, css = self.cssModel,  result = "", delim = self.DELIM;
+        if (!css['box-shadow'].length) return "";
+        prefix = prefix || "";
+        result += prefix + "box-shadow:"+ delim;
+        var prevShad;
+        for (var i = css['box-shadow'].length; i--;){
+            if (css['box-shadow'][i]) {
+                if (css['box-shadow'][i+1]) prevShad = css['box-shadow'][i+1];
+                var mergedShadow = self.mergeBoxShadow(css['box-shadow'][i], prevShad);
+                result += mergedShadow.toCSS() + "," + delim;
+            }
+        }
+        result = result.substr (0, result.length-2) + ';\n';
+        return result;
+    },
+
+    //Return new box shadow, merged with background & prevShadow, if it applicable
+    mergeBoxShadow: function(shad, prevShad){
+        var self = this, bg = self.cssModel.background[0],
+        color = shad.get("color");
+        if (bg instanceof Gradient) {
+            //TODO: cet the most correct color
+            bg = bg.average();
+        }
+        if (prevShad && (prevShad.get("isInset") == shad.get("isInset"))) {
+            //TODO: Test if current shadow overlaps shadow below
+            bg = Graph.applyOverlay(bg, prevShad, {mode: prevShad.mode, noAlpha: true});
+        }
+        //TODO: exclude opacity from mixing here
+        color = Graph.applyOverlay(bg, color, {mode:shad.mode, noAlpha:true});
+        
+        return shad;
+    },
+
+    
+    //Render full text properties
+    renderText : function(){
+        var self = this, result = "", css = self.cssModel, o = self.settings;
+        //Text-shadow
+        var textShadow = "";
+        if (css['text-outer-glow']) textShadow += css['text-outer-glow'] + (c?' /*outer-glow*/':'') + ',' + delim;
+        if (css['text-drop-shadow']) textShadow += css['text-drop-shadow'] + (c?' /*drop-shadow*/':'') + ',' + delim;
+        if (textShadow) textShadow = 'text-shadow:' + delim + textShadow.substr (0, textShadow.length-2) + ';\n';
+        result += textShadow;
+                
+        if(css['color']) result += "color: " + css['color'].toCSS() + (o.comments ? "; /* Text color */\n" : ";\n");
+        if(css['text-decoration']) result += "text-decoration: " + css['text-decoration'] + ";\n";
+        if(css['letter-spacing']) result += "letter-spacing: " + css['letter-spacing'] + ";" + (o.comments ? " /* Tracking */\n" : "\n");
+        result += "font-family: \"" + css['font-family'] + "\"" + ";\n";
+        result += "font-size: " + css['font-size'].value + css['font-size'].type + ";\n";
+        result += "line-height: " + css['line-height'].value + css['line-height'].type + ";\n";
+        if (css['font-weight']) result += "font-weight: " + css['font-weight'] + ";\n";
+        if (css['font-style']) result += "font-style: " + css['font-style'] + ";\n";
+        if (css['font-variant']) result += "font-variant: " + css['font-variant'] + ";\n";
+        if (css['text-transform']) result += "text-transform: " + css['text-transform'] + ";\n";
+        if (css['text-align']) result += "text-align: " + css['text-align'] + ";\n";
+        if(css['text-align-last']) result += "text-align-last: " + css['text-align-last'] + ";\n";
+        if (css['text-indent']) result += "text-indent: " + css['text-indent'] + ";\n";
+        
+        return result;
+    },
+
+    //Sizes & paragraph paddings, if neccessary
+    //TODO: make correct size rendering
+    renderSize : function(){
+        var result = "", self = this, o = self.settings, css = self.cssModel;        
+        /*if (self.lKind == LayerKind.TEXT && self.textItem.kind == TextType.PARAGRAPHTEXT ){
+            //Paragraph has sizes inside TextItem. Besides, it has paddings.
+            var padding = "";
+            if(css['padding-top']) {
+                if (css['padding-top'] == css['padding-bottom']){
+                }
+            }
+        } else if (true){
+            //Otherwise supposed that we have a vector mask
+        }*/
+    
+        return result;        
+    },
+
+       
+      
+    //==============================Main function - returns CSS string with rendered result
+    getLayerCss : function(){
+        var self = this, o = self.settings, 
+        result = "";
+        self._initActiveLayer();
+        self.parseCSSModel();
+        result += self.renderCSSModel();
+        return result;                
+    }
+
+}); //end of extend
+})(photoshopr);

@@ -1,0 +1,1 @@
+Dit script voegt een handeling om de Effecten palet ~ Importeren script ~ Vernieuwen ~ Annuleren ~ OK ~ Opslaan en sluiten ~ Opslaan in categorie: ~ Scriptnaam: ~ Toon "MediaDatabase.db3" in Finder ~ ß

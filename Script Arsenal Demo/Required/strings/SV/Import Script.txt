@@ -1,0 +1,1 @@
+Detta skript lägger till skript till Effects paletten ~ Importera script ~ Uppdatera ~ Avbryt ~ OK ~ Spara och stäng ~ Kategorinamn: ~ Skriptnamn ~ Avslöja "MediaDatabase.db3" i Finder ~ ß

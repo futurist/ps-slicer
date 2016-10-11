@@ -1,0 +1,19 @@
+﻿/*
+   Some basic methods & inits 
+*/
+
+#include "../lib/json2.js"
+
+var s2t =stringIDToTypeID, t2s = typeIDToStringID, t2c = typeIDToCharID, c2t = charIDToTypeID;
+
+var extend = function(){
+    var resObj  = arguments[0] || {};
+    if (!arguments[1]) return arguments[0];
+    for (var i = 1; i < arguments.length; i++){
+        if (!arguments[i]) continue;
+        for (var name in arguments[i]) {
+            resObj[name] = arguments[i][name];
+        }
+    }
+    return resObj;
+}

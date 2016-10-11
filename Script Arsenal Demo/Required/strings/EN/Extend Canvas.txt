@@ -1,0 +1,1 @@
+This script lets you extend each side **of document canvas individually ~ Extend Canvas ~ Refresh view ~ Cancel ~ OK ~ Save settings and close dialog ~ All open images ~ ß

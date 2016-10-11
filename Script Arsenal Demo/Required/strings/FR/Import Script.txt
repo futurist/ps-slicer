@@ -1,0 +1,1 @@
+Ce script ajoute un script à la palette Effets ~ Importer Script ~ Actualiser ~ Annuler ~ OK ~ Sauvegarder vos paramètres et fermer la boîte de dialogue ~ Nom de la catégorie: ~ Nom du script: ~ Voir "MediaDatabase.db3" dans le Finder ~ ß

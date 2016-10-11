@@ -1,0 +1,13 @@
+c2t = function (s) { return app.charIDToTypeID (s) }
+s2t = function (s) { return app.stringIDToTypeID (s) }
+t2s = function (x) { return app.typeIDToStringID (x) }
+t2c = function (x) { return app.typeIDToCharID (x) }
+
+$.write('------')
+$.write(t2s(c2t('AddT')))
+$.write(t2s(c2t('setd')))
+$.write(t2s(c2t('SbtF')))
+$.write(t2s(c2t('IntW')))
+$.write(t2s(c2t('capp')))
+$.write(t2s(c2t('Ordn')))
+$.write(t2s(c2t('Trgt')))

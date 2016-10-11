@@ -1,0 +1,146 @@
+/* CSS Document */
+  html, body {
+	margin: 0px 2px 10px 10px;
+	padding: 0px;
+	border: 0px;
+}
+body {
+	color: #000;
+	background: #fff;
+	}
+	
+ a, a:visited {
+	color: #333;
+	text-decoration:underline;
+}	
+ a:hover, a:active {
+	color:#C30;
+}
+
+
+h1 {
+font-size: 1.6em;
+font-family:Geneva, Arial, Helvetica, sans-serif;
+color:#505f83;
+padding: 3px 0px 0px 10px;
+}
+
+.text {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size:0.8em;
+	text-align:justify;
+	padding-right:12px;
+	padding-bottom:0px;
+}
+
+ol {
+list-style-position:inside;
+}
+
+ol li {
+margin-bottom:12px;
+}
+  	.ital {
+	font-style:italic;
+	}
+
+.aster {
+	color:#c03;
+}
+
+.thumb {
+	width:64px;
+	float: left;
+	text-align:left;
+	font-family:"Times New Roman", Times, serif;
+	font-style:italic;
+	font-size:0.9em;
+	color:#666;
+	padding-right:12px;
+	padding-top:5px;
+	margin-bottom:8px;
+}
+
+.th {
+	float: left;
+	text-align:left;
+	font-family:"Times New Roman", Times, serif;
+	font-style:italic;
+	font-size:0.9em;
+	color:#666;
+	padding-right:12px;
+	padding-top:5px;
+	margin-bottom:8px;
+}
+
+.toc {
+	text-align: left;
+	width:200px;
+	height:500px;
+	margin-right:10px;
+	overflow:auto;
+	background-color:#fff;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-style:italic;
+	font-size:0.8em;	
+}
+
+.toc table {
+	width:180px;
+}
+.toc ul {
+margin-top: 2px;
+margin-bottom: 4px;
+}
+.toc ul li {
+padding:2px;
+	clear:both;
+	border-left: none;
+	list-style-type:circle;
+	overflow:visible;
+	font-size:0.9em;
+}
+
+
+ .toc a, .toc a:visited {
+	color: #999;
+	text-decoration:none;
+}	
+ .toc a:hover, .toc a:active {
+	color:#000;
+	background-color:#e0e8f1;
+	text-decoration:underline;
+}
+.chapter {
+background: #f6f9fc;
+padding: 4px 0px 4px 12px;
+}
+.subChapter {
+background: #f9fafa;
+padding: 2px 0px 2px 28px;
+font-size:0.9em;
+}
+
+.lForm {
+background-color:#f6f9fc;  
+color:#666; 
+font-family: Georgia, "Times New Roman", Times, serif; 
+font-style:italic; 
+font-size:0.9em;
+}
+.lForm option {
+padding: 2px 6px 0px 4px;	
+}
+
+.arr {
+clear:both;
+align:center;
+margin-top:40px;
+width:100%;
+border-width:0px;
+}
+.arr img {
+border:0px;
+}
+
+

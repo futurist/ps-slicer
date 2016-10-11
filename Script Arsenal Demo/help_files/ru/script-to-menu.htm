@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Добавление сценариев в меню</title>
+<link href="../px/page.css" rel="stylesheet" type="text/css">
+<!-- saved from url=(0013)about:internet -->
+<script language="JavaScript">
+<!--
+function langMenu( ){ 
+if (document.langForm.jumpToLang.value != "null") {
+var usrLang = document.langForm.jumpToLang.value;
+var docPathArray = document.URL.split("\/");
+docPathArray = docPathArray[docPathArray.length-1].split("\\");
+var pageName = docPathArray[docPathArray.length-1];
+var langPage = "../"+usrLang+"/"+pageName;
+document.location.href = langPage
+}
+}
+
+function setCookie ( name, value,expires, path ) {
+      document.cookie = name + "=" + escape(value) +
+	    ((expires) ? "; expires=" + expires.toGMTString() : "") +
+        ((path) ? "; path=" + path : "")
+}
+var today = new Date();
+var expiry = new Date( today.getTime() + 31536000000 );
+setCookie ( "lastSAPageD1", document.URL, expiry, "/" );
+//-->
+</script>
+</head><body>
+
+<table width="950" align="center" cellpadding="6">
+<tr>
+  <td height="40" align="center" valign="bottom">
+<script language="JavaScript">
+<!--
+ document.write (' <form name="langForm"  class="text"> '+
+ '<select name="jumpToLang" class="lForm" onChange="langMenu()">'+    
+ '<option value="en">English</option>'+ 
+ '<option value="de">German - Deutsch</option> '+
+ '<option value="ru" selected>Russian - Русский</option> '+
+ '</select> '+
+ '</form> '
+ )
+ //-->
+</script>
+<noscript>
+<a href="../en/index.htm"><img src="../px/lang-en.png" width="30" height="20" border="0" style="padding-right:24px"></a>
+<a href="../de/index.htm"><img src="../px/lang-de.png" width="30" height="20" border="0" style="padding-right:24px"></a> 
+<a href="../ru/index.htm"><img src="../px/lang-ru.png" width="30" height="20" border="0"></a>
+</noscript>			  
+  </td>
+  <td height="40"><h1>Добавление сценариев в меню</h1></td>
+</tr>
+<tr>
+      <td valign="top"><div class="toc">
+        <table border="0" cellspacing="0" cellpadding="2">
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="index.htm">Начало работы</a></td>
+          </tr>
+          <tr>
+            <td><ul>
+              <li><a href="index.htm">Установка</a></li>
+              <li><a href="catalog.htm">Диалог Script Arsenal</a></li>
+              <li><a href="script-to-menu.htm">Добавление сценариев в меню</a></li>
+              <li><a href="script-to-action.htm">Добавление скриптов в Операции</a></li>
+              <li><a href="manage-scripts.htm">Управление скриптами</a></li>
+              <li><a href="troubleshooting.htm">Устранение проблем</a></li>
+            </ul></td>
+          </tr>
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="scripts.htm">Сценарии</a></td>
+          </tr>
+          <tr>
+            <td><ul>
+              <li><a href="aerograph.htm">Аэрограф</a></li>
+              <li><a href="burnt-edges.htm">Обожжённые поля</a></li>
+              <li><a href="close-others.htm">Закрыть остальные</a></li>
+              <li><a href="confetti.htm">Конфетти</a></li>
+              <li><a href="cross-processing.htm">Кросспроцесс</a></li>
+              <li><a href="disk-label.htm">Фото на диск</a></li>
+              <li><a href="extend-canvas.htm">Растянуть холст</a></li>
+              <li><a href="film-edges.htm">Фотоплёнка</a></li>
+              <li><a href="illustration.htm">Иллюстрация</a></li>
+              <li><a href="open-all-recent.htm">Открыть все недавние</a></li>
+              <li><a href="quick-shadow.htm">Быстрая тень</a></li>
+              <li><a href="torn-edges.htm">Рваные края</a></li>
+              <li><a href="water-drops.htm">Капли воды</a></li>
+              <li><a href="wavy-edges.htm">Волнистые края</a></li>
+            </ul></td>
+          </tr>
+          <tr>
+            <td class="chapter"><a href="http://script-arsenal.com/buy-script-arsenal.htm">Купить полную версию</a></td>
+          </tr>
+        </table>
+    </div></td>
+      <td valign="top" class="text"><p>Чтобы ускорить доступ к часто используемым сценариям, их можно добавить в главное меню Photoshop        .</p>
+        <p>Для этого откройте диалог &quot;Script Arsenal&quot;, выделите нужный сценарий из списка  и нажмите кнопку <img src="../px/ico/add-to-menu.png" width="15" height="12" align="absmiddle">. <br>
+          Новый скрипт появится в меню &quot;Файл &gt; Сценарии &gt; ...&quot;  после перезапуска Photoshop.</p>
+        <p class="ital"><span class="aster">Прим.</span> Поскольку многие скрипты используют вспомогательные файлы из папки  &quot;Script Arsenal&quot;,<br>
+        добавлять их в меню простым копированием  в папку &quot;Presets/Scripts&quot; не рекомендуется.</p>
+        <p>Для ещё большего удобства добавленным скриптам можно назначить &quot;горячие клавиши&quot; (Редактирование &gt;Клавиатурные сокращения). 
+          В примере, приведённом на скриншоте, диалог &quot;Script Arsenal&quot;
+        открывается нажатием F4, а клавиша  F5 служит для перехода к <a href="http://script-arsenal.com/ru/next-file.htm">следующему файлу</a>.</p>
+        <p><img src="../px/script-keys.png" width="800" height="615" alt="Choosing script category"></p>
+        <p class="ital"><span class="aster">Прим.</span> В Photoshop CS3 и CS4 вызов сценариев с помощью клавиатурных сокращений может работать некорректно. В этом случае, часто используемые скрипты лучше запускать с панели Операций (<a href="script-to-action.htm">подробнее</a>).</p>
+        <table class="arr">
+          <tr align="center" valign="middle">
+            <td align="right"><a href="catalog.htm"><img src="../px/prev.gif" alt="Previous" width="18" height="19"></a></td>
+            <td width="40"></td>
+            <td align="left"><a href="script-to-action.htm"><img src="../px/next.gif" alt="Next" width="18" height="19"></a></td>
+          </tr>
+        </table></td>
+  </tr>
+
+  </table>
+</body>
+</html>

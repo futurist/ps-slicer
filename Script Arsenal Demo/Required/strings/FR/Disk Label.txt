@@ -1,0 +1,1 @@
+Ce script prépare une image pour l'impression sur CD / DVD. ~ Étiquette de disque ~ ß

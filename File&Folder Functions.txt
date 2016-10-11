@@ -1,0 +1,177 @@
+Functions for File & Folder
+
+Get file name without extension
+
+function GetFileName(fileName) {
+	var str = "";
+	var res = fileName.lastIndexOf(".");
+	if (res == -1) {
+		str = fileName;
+	}
+	else {
+		str = fileName.substr(0, res);
+	}
+	return str;
+}
+Get extension without file name
+
+function GetExtension(name) {
+	var idx = name.lastIndexOf(".");
+	var ext = "";
+	if (idx > -1) {
+		ext = name.substr((idx + 1));
+	}
+	return ext;
+}
+Remove the path and file extension to return the file name
+
+function getFileName(value) {
+	var path = value.toString();
+	var lastIndex = path.lastIndexOf("/");
+	var file = path.slice(lastIndex + 1);
+	var lastIndexPeriod = file.lastIndexOf(".");
+	return file.slice(0, lastIndexPeriod);
+}
+Write to file
+
+function WriteToFile(text) {
+	file = new File("~/Desktop/Log.txt");
+	file.encoding = "UTF-8";
+	if (file.exists) {
+		file.open("e");
+		file.seek(0, 2);
+	}
+	else {
+		file.open("w");
+	}
+	file.write(text); 
+	file.close();
+}
+Verify folder based on the Bob Stucky's library
+
+function VerifyFolder(folder) {
+	if (!folder.exists) {
+		var folder = new Folder(folder.absoluteURI);
+		var arr1 = new Array();
+		while (!folder.exists) {
+			arr1.push(folder);
+			folder = new Folder(folder.path);
+		}
+		var arr2 = new Array();
+		while (arr1.length > 0) {
+			folder = arr1.pop();
+			if (folder.create()) {
+				arr2.push(folder);
+			} else {
+				while (arr2.length > 0) {
+					arr2.pop.remove();
+				}
+				throw "Folder creation failed";
+			} 
+		}
+	}
+}
+    
+GetScriptsFolder by Harbs
+
+function GetScriptsFolder() {
+          var scriptsFolder = null;
+          do{
+          // On Mac this is a folder inside the app package
+                    var appFolder = Folder.startup;
+                    if (! appFolder.exists){break;}
+                    scriptsFolder = Folder(appFolder + "/Scripts");
+                    while (appFolder.exists && ! scriptsFolder.exists){
+                              appFolder = appFolder.parent;
+                              scriptsFolder = Folder(appFolder + "/Scripts");
+                    }
+                    if (! scriptsFolder.exists){
+                              scriptsFolder = null;
+                              break;
+                    }
+          }
+          while (false);
+          return scriptsFolder;
+}
+Get script path
+
+function GetScriptPath() {
+    try{
+        return app.activeScript;
+    }
+    catch(err){
+        return new File(err.fileName);
+    }
+}
+Move file by Kasyan
+
+Unlike AS or VB, JS has no move method for file object ¡ª a workaround is to first copy a file and then remove the original. But this approach has a shortcoming: files loose their original creation and modification dates, labels, etc. This function uses native AS or VB Move command/method depending on the platform the script is run, thus preserving this information. Click here to download
+
+Set label to a file by Kasyan
+
+Set label to a file on Mac by JavaScript.
+
+How to copy a file to another folder without changing DateModified using Javascript in Windows
+
+Main();
+
+function Main() {
+	if (File.fs == "Windows")  {
+		var file = new File("/E/Temp_1/Test.txt");
+		var destinationFolderPath = "/D/Temp_2/";
+		var destinationFolder = new Folder(destinationFolderPath);
+		if (!destinationFolder.exists) destinationFolder.create();
+		
+		var vbScript = 'Set fs = CreateObject("Scripting.FileSystemObject")\r';
+		vbScript +=  'fs.CopyFile "' + file.fsName.replace("\\", "\\\\") + '", "' + destinationFolder.fsName.replace("\\", "\\\\") + "\\" + file.name + '"';
+
+		app.doScript(vbScript, ScriptLanguage.visualBasic);
+	}
+}
+Get startup disk ¡ª JavaScript function that gets the name of startup disk Both on Mac and Windows
+
+How to find all indd-files inside subfolders
+
+var files;
+var folder = Folder.selectDialog("Select a folder with InDesign documents");
+if (folder != null) {
+	files = GetFiles(folder);
+	if (files.length > 0) {
+		alert("Found " + files.length + " InDesign documents");
+	}
+	else {
+		alert("Found no InDesign documents");
+	}
+}
+
+function GetFiles(theFolder) {
+	var files = [],
+	fileList = theFolder.getFiles(),
+	i, file;
+	
+	for (i = 0; i < fileList.length; i++) {
+		file = fileList[i];
+		if (file instanceof Folder) {
+			files = files.concat(GetFiles(file));
+		}
+		else if (file instanceof File && file.name.match(/\.indd$/i)) {
+			files.push(file);
+		}
+	}
+
+	return files;
+}
+Open all indd-files in the selected folder
+
+app.open(Folder(Folder.selectDialog( "Select a folder with InDesign files")).getFiles(function(f) { return f instanceof File && !f.hidden && (f.name.match(/\.indd$/i) || f.type.match(/^IDd/)); } ));
+Write the contents of the folder
+
+var myFolder = Folder.selectDialog ('Choose a Folder');
+$.writeln('-------------------------------\r' + myFolder.displayName + '\r-------------------------------\r');
+if(myFolder != null){
+	var myFiles = myFolder.getFiles('*.*');
+	for (i = 0; i < myFiles.length; i++){
+		var myFile = myFiles[i];
+		$.writeln(myFile.displayName);
+	}
+}

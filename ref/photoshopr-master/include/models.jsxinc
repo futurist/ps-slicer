@@ -1,0 +1,811 @@
+﻿#script "Models of Photoshopr"
+//Simple mix for getting/setting options
+GetSetOptions = {
+    get: function(name){
+        return this.options && this.options[name];
+    }, 
+    set: function(name, value){
+        if (typeof name == "string")
+        this.options && (this.options[name] = value);
+        else if (typeof name == "object")
+        extend(this.options, name);
+        return this;
+    }
+}
+
+
+//========================================================Gradient model
+var Gradient = function(o){
+    return this._init(o);
+};
+//-----------------------------------------------------------------------------------------------Gradient prototype
+Gradient.prototype =extend({}, {
+    defaults: {
+        type: "linear", //radial, linear, reflected
+        //steps: null, //location, color
+        angle: 0, //in deg
+        opacity: 100, //resulting opacity of gradient, applied after color opacities
+        LOCATION_RANGE:100, //It's supposed location for full element height
+        reversed: false,
+        comment: "", //To insert in css rendering
+        mode: "normal" //Mode that overwrites all the color's mode
+    },
+
+    _init: function(o){
+        var self = this;
+        self.options = extend({steps:[]}, self.defaults,o);
+        self.options.prototype = self.defaults;
+        return self;
+    },
+
+    toCSS: function(prefix){
+        var self = this, o = self.options,
+        result = "";
+        prefix = prefix || "";
+        var delim = photoshopr.DELIM;
+        //Make type of gradient
+        switch (o.type) {
+            case "radial":
+                result+= prefix + "radial-gradient(";
+                break;
+            default:
+                var angle = o.reversed ? ((o.angle + 180)%360) : o.angle;
+                result+= prefix + "linear-gradient(";
+                //Do direction
+                switch (angle){
+                    case 90:
+                        result += "bottom, ";
+                        break;
+                    case -90:
+                    case 270:
+                    result += "top, ";
+                    break;
+                    case 0:
+                    result += "left, ";
+                    break;
+                    case 180:
+                    case -180:
+                    result += "right, ";
+                    break;
+                    default:
+                    result += angle + "deg, ";
+                }
+            }
+        //Make steps of gradient
+        o.steps.sort(function(a,b){return a.location - b.location});
+        for (var i = 0; i < o.steps.length; i++){
+            result += o.steps[i].color/*.applyOpacity(o.opacity)*/.toCSS();
+            result += " "+o.steps[i].location + "%, ";
+        }
+    result = result.substr (0, result.length-2) + ')';
+    o.comment && (result += " /*" + o.comment + "*/");
+    return result;
+    },
+
+    //Return grad as SVG
+    getSVG: function(){
+    },
+    
+    //Make reflection of gradient by position
+    reverse: function(){
+        var self = this, o = self.options, steps = o.steps, range = o.LOCATION_RANGE
+        for (var i = steps.length; i--;){
+            steps[i].location = range - steps[i].location
+        }
+        self._sort();
+        return self;
+    },
+
+    //Ascending sorting by location
+    _sort: function(){
+        var self = this, o = self.options, steps = o.steps;
+        steps.sort(function(a,b){
+            return a.location - b.location;
+        })
+        return self;
+    },
+
+    //Return average color of gradient
+    average: function(){
+        var self = this, o = self.options, steps = o.steps;
+        var average= new Color(), sr=0,sg=0,sb=0,sa=0;
+        var nSteps = steps.length;
+        for (var i = nSteps; i--;){
+            sr += steps.color.r();
+            sg += steps.color.g();
+            sb += steps.color.b();
+            sa += steps.color.a();
+        }
+        average.r(sr/nSteps);
+        average.g(sg/nSteps);
+        average.b(sb/nSteps);
+        average.a(o.opacity*.01*sa/nSteps);        
+        return average;
+    }
+}, GetSetOptions);
+
+//-----------------------------------------------------------------------------------Gradient singleton methods
+extend(Gradient,{
+    //Kind of gradient fabric
+    create: function(arg, opts){
+        if (arg instanceof ActionDescriptor) {//create from actiondescriptor of gradient            
+             gradientForm = arg.getEnumerationValue(s2t('gradientForm'));
+            if (t2s(gradientForm) == "colorNoise") return false; //dont fuck with colorNoise gradients            
+            var g = this._createFromRef(arg);
+            g.set(opts);
+            return g;
+        } else { //simple create
+            return new Gradient(arg);
+        }
+    },
+
+    //Technical fabric method
+    _createFromRef: function(gradientRef){
+        var g = new Gradient(), o = g.options;        
+        transpList = gradientRef.getList(s2t('transparency')),
+        colorList = gradientRef.getList(s2t('colors')),
+        iicon = gradientRef.getDouble(s2t('interfaceIconFrameDimmed')); //TODO: whattafuck is this? Do get know    
+        var trans = [], colors = []; //technical arrays        
+        //grab all transparents
+        for (var i = transpList.count; i--;){ 
+            var transpObj = transpList.getObjectValue(i),
+            midpoint = transpObj.getInteger(s2t('midpoint')),//0..100, first midpoint  is always 50 
+            location = transpObj.getInteger(s2t('location')),//0..4096
+            opacity = transpObj.getUnitDoubleValue(s2t('opacity'));//0..100
+            trans.push({location:location, opacity:opacity});
+            if (midpoint!=50){//add displacement of midpoint step, if midpoint not 50
+                var prev = transpList.getObjectValue(i-1)||transpObj,
+                prevLocation = prev.getInteger(s2t('location')),
+                prevOpacity = prev.getUnitDoubleValue(s2t('opacity'));
+                trans.push({
+                    location: prevLocation + (location-prevLocation)*midpoint*.01, 
+                    opacity:prevOpacity + (opacity-prevOpacity)*.5
+                })
+            }
+        }  
+        trans.sort(function(a,b){return a.location - b.location});        
+        //grab all colors
+        for (var i = 0; i < colorList.count ;i++){ 
+            var colorStep = colorList.getObjectValue(i)
+            midpoint = colorStep.getInteger(s2t('midpoint')),//0..100, first midpoint  is always 50 
+            location = colorStep.getInteger(s2t('location')),//0..4096
+            type = t2s(colorStep.getEnumerationValue(s2t('type'))),//
+            color = Color.create(colorStep.getObjectValue(s2t('color')));
+            colors.push({location:location, color:color});
+            if (midpoint!=50){//add displacement of midpoint step, if midpoint not 50
+                    var prev = colorList.getObjectValue(i-1),//||colorStep,
+                    prevLocation = prev.getInteger(s2t('location')),
+                    prevColor = Color.create(prev.getObjectValue(s2t('color')));
+                    colors.push({
+                        location: prevLocation + (location-prevLocation)*midpoint*0.01, 
+                        color:color.getMix(prevColor)
+                    })
+                }
+        }
+        colors.sort(function(a,b){return a.location - b.location});        
+        //Fill o.steps based on colors & transp arrays
+        var lRange = 4096;//location range   
+        var colorStep, transpStep, prevColorStep, prevTranspStep;
+        var stoppr = 120;
+        var mid = Graph.mid;
+        for (var ic = 0, it = 0; ic<colors.length || it < trans.length && stoppr--; ){
+            //$.writeln(stoppr+' : '+(colors[ic] && colors[ic].location)+' : '+(trans[it]&&trans[it].location));        
+            colorStep = colors[ic] || {location : lRange, color : colorStep.color}; //end limiter color
+            prevColorStep = colors[ic-1] || {location : 0, color : colorStep.color}; //start limiter color
+            transpStep = trans[it] || {location : lRange, opacity : transpStep.opacity}; //end limiter transp
+            prevTranspStep = trans[it-1] || {location : 0, opacity : transpStep.opacity}; //start limiter transp            
+            if (Math.abs( colorStep.location - transpStep.location ) < 42) {//colorstep==transparentstep
+                o.steps.push({
+                    location: Math.round(colorStep.location/lRange*o.LOCATION_RANGE),
+                    color: colorStep.color.set("opacity", transpStep.opacity)
+                });
+                it++; ic++;
+            } else if (colorStep.location < transpStep.location){//colorstep
+                o.steps.push({
+                    location: Math.round( colorStep.location/lRange*o.LOCATION_RANGE),
+                    color: colorStep.color
+                    .set("opacity", mid( transpStep.opacity, prevTranspStep.opacity, (colorStep.location - prevTranspStep.location)/(transpStep.location - prevTranspStep.location)))
+                });
+            ic++;
+            } else if (colorStep.location > transpStep.location ) {//transpstep
+                o.steps.push({
+                    location: Math.round(transpStep.location/lRange*o.LOCATION_RANGE),
+                    color: colorStep.color
+                    .getMix(prevColorStep.color, (transpStep.location - prevColorStep.location)/(colorStep.location - prevColorStep.location))
+                    .set("opacity", transpStep.opacity)
+                });
+                it++;
+            } else {
+                $.writeln("Dude, something has gone wrong in gradient generation: infinite cycling.");
+                ic++; it++
+            }
+        }    
+        return g;    
+    } //end of _createFromRef
+});
+
+
+//============================================================Color model
+var Color = function(arg){
+    return this._init(arg);
+};
+
+//-------------------------------------------------------------------------------------------------------Color singleton
+extend(Color, {
+    //Create new color object
+    create : function(arg, opts) {
+        if (arg instanceof SolidColor) {//clone color
+            var c = new Color(extend({
+                color:arg
+            }, opts));
+            return c;
+        }
+        else if (arg instanceof ActionDescriptor) {//create from actiondescr
+            var sc = new SolidColor();
+            sc.rgb.red=Math.round(arg.getDouble(s2t("red")));
+            sc.rgb.green=Math.round(arg.getDouble(s2t("grain")));
+            sc.rgb.blue=Math.round(arg.getDouble(s2t("blue")));
+            var c = new Color(extend({
+                color:sc
+            },opts));
+            return c;
+        } else { //simple create
+            return new Color(arg);
+        }
+    }
+});
+
+//--------------------------------------------------------------------------------------------------------Color prototype
+extend(Color.prototype, {
+    defaults:{
+        mode:'normal',
+        format: 'rgb', //hsl, rgb, hex
+        opacity: 100,
+        //color:null, //It would be a SolidColor
+        comment:"" //To insert after color def in css
+    },
+    _init:function(opts){
+        var self = this;
+        self.options = extend({}, self.defaults, opts);
+        if (!self.options.color) self.options.color = new SolidColor();
+        return self;
+    },
+    r:function(arg){return (arg!==undefined) ? (this.options.color.rgb.red = arg) : this.options.color.rgb.red},
+    g:function(arg){return (arg!==undefined) ? (this.options.color.rgb.green= arg) : this.options.color.rgb.green},
+    b:function(arg){return (arg!==undefined) ? (this.options.color.rgb.blue = arg) : this.options.color.rgb.blue},
+    h:function(arg){return (arg!==undefined) ? (this.options.color.hsb.hue = arg) : this.options.color.hsb.hue},
+    s:function(arg){return (arg!==undefined) ? (this.options.color.hsb.saturation = arg) : this.options.color.hsb.saturation},
+    br:function(arg){return (arg!==undefined) ? (this.options.color.hsb.brightness = arg) : this.options.color.hsb.brightness},
+    a:function(arg){return (arg!==undefined) ? (this.options.opacity = arg*100) : this.options.opacity*.01},
+    opacity:function(arg){return (arg!==undefined) ? (this.options.opacity = arg) : this.options.opacity},
+    toCSS:function(){
+        var self = this, o = self.options;
+        var colorVal = "",
+        opacity = o.opacity === 0 ? 0 : (o.opacity || 100),
+        colorObj = o.color;        
+        opacity = Math.round(opacity);        
+        switch (o.format){
+            case 'rgb':
+                var r = colorObj.rgb.red.toFixed(0),
+                g = colorObj.rgb.green.toFixed(0),
+                b = colorObj.rgb.blue.toFixed(0);
+                colorVal = (opacity >= 100) ? ('rgb('+r+', '+g+', '+b+')') : ('rgba('+r+', '+g+', '+b+', '+(opacity*.01).toFixed(2).slice(1)+')');
+                break;
+            case 'hsl':
+                var h = colorObj.hsb.hue, 
+                l = (2-colorObj.hsb.saturation*0.01) * colorObj.hsb.brightness*0.01, 
+                s = colorObj.hsb.saturation*0.01 * colorObj.hsb.brightness*0.01;
+                s = (l <= 1) ? l : (2 - l);
+                l /= 2;
+                s = s.toFixed(3)*100+'%';
+                l = l.toFixed(3)*100+'%';
+                colorVal = (opacity == 100) ? ('hsl('+h+', '+s+', '+l+')') : ('hsla('+h+', '+s+', '+l+', '+(opacity*.01).toFixed(2).slice(1)+')');
+                break;
+            case 'hex':
+                colorVal = '#'+colorObj.rgb.hexValue.toLowerCase();
+                break;
+        }        
+        o.comment && (colorVal += " /*" + o.comment + "*/");
+        return colorVal;    
+    },    
+    //Returns new color object with color between self & colorB
+    getMix : function(colorB, midpoint){
+        var self = this, colorA = self.options.color,
+        colorObj = new SolidColor();
+        if (colorB instanceof Color) colorB = colorB.get("color");
+        midpoint = midpoint || .5;
+        midpoint = Math.max(Math.min(midpoint, 1), 0);
+        colorObj.rgb.red = Graph.mid( colorA.rgb.red, colorB.rgb.red, midpoint );
+        colorObj.rgb.green = Graph.mid( colorA.rgb.green, colorB.rgb.green, midpoint );
+        colorObj.rgb.blue = Graph.mid( colorA.rgb.blue, colorB.rgb.blue, midpoint );
+        return Color.create(colorObj);
+    },
+    //Makes color opacity
+    applyOpacity: function(opacity){
+        var self = this, o = self.options;
+        o.opacity = .01*o.opacity*opacity;
+        return self;
+    }
+}, GetSetOptions);
+
+
+//=========================================================Shadow model
+var Shadow = function(o){
+    return this._init(o);
+}
+//----------------------------------------------------------------------------------------------------Shadow prototype
+extend(Shadow.prototype,{
+    defaults:{
+        isTextShadow:false,
+        inset:false,
+        x:0,
+        y:0,
+        stroke:0,
+        blur:0,
+        color:null,
+        comment: ""
+    },
+    _init: function(o){
+        var self = this;
+        self.options = extend({}, self.defaults, o);
+        return self;
+    },
+    toCSS: function(){
+        var self = this, o =this.options;
+        var result = "";
+        result += (o.inset?"inset ":"") + o.x+"px " + o.y + "px " + Math.round(o.blur) + "px " + (!o.isTextShadow&&o.stroke?(o.stroke+"px "):"") + o.color.toCSS();
+        o.comment && (result += " /*" + o.comment + "*/");
+        return result;
+    },
+    //Photoshop helper that sets blur & stroke from blur & spread
+    blurSpread: function(blur, spread){
+        var self = this, o = self.options;
+        var stroke = Math.round(spread*0.01*blur);
+        if (o.isTextShadow){
+            extend(o,{stroke:stroke, blur:blur + stroke});
+        } else {
+            extend(o,{stroke:stroke, blur:blur - stroke});
+        }
+        return self;
+    },
+    //Convert dist & angle to x & y, set them to the model
+    angleDistance: function(angle, distance){
+        var self = this, o = self.options;
+        o.x = Math.round(distance * -Math.cos(angle/180*Math.PI));
+        o.y = Math.round(distance * Math.sin(angle/180*Math.PI));
+    }    
+}, GetSetOptions)
+
+
+
+//=======================================================Shape (path) model
+var Shape = function(o){
+    return this._init(o);
+}
+//-------------------------------------------------------------------------------------------------Shape prorotype
+extend(Shape.prototype, {
+    defaults:{
+        points:null, //array of points
+        isRect:false,
+        isClosed:true,
+        bounds:null, //simple bounds of convex hull of path.
+        encodeBase64: false, //do result encoded
+        fill: null //Fill means - gradient or color maybe
+    },
+    _init: function(o){
+        var self = this;
+        self.options = extend({}, self.defaults, o);
+        if (!self.options.points) self.options.points = [];
+        return self;
+    },
+    w:function(arg){
+        if (arg!==undefined) {
+            this.set("width", arg);
+            return this;
+        } else 
+        return this.get("width");
+    },
+    //return points in SVG path notation
+    getSVGPath: function(){
+        var self = this, o = self.options;
+        var result = "";
+        return result;
+    },
+    //returns minimal-compiled svg string
+    toSVG: function(){
+        var self = this, o = self.options;
+        var result = "", svg = "<svg xmlns='http://www.w3.org/2000/svg' ";
+        svg += " viewBox='0 0 40 40' height='25' width='25'>"
+        result += "<path fill='#000000' d='"+self.getSVGPath()+"'/>"
+        result += "</svg>";
+        return result;
+    },
+    toCSS: function(){
+        var self = this, o = self.options;
+        var result = "data:image/svg+xml,";
+        result += self.toSVG();
+        return result;        
+    }
+}, GetSetOptions);
+
+
+//-------------------------------------------------------------------------------------------------------Shape singleton
+extend(Shape, {
+    create : function(arg, opts) {
+        if (arg instanceof ActionDescriptor) {//create from actiondescr
+            var rawPoints = arg.getList(s2t("subpathListKey")).getObjectValue(0).getList(s2t("points"));
+            var points = [],
+            minLeft = Number.MAX_VALUE, 
+            minTop = Number.MAX_VALUE, 
+            maxBottom = Number.MIN_VALUE,
+            maxRight = Number.MIN_VALUE;
+            for (var i = 0; i < rawPoints.count; i++){
+                var point = rawPoints.getObjectValue(i);
+                var p = {
+                    cX: point.getObjectValue(s2t("anchor")).getUnitDoubleValue(s2t("horizontal")),
+                    cY: point.getObjectValue(s2t("anchor")).getUnitDoubleValue(s2t("vertical"))
+                }
+                try { extend(p, {                        
+                        smooth: point.getBoolean(s2t("smooth")),
+                        lX: point.getObjectValue(s2t("backward")).getUnitDoubleValue(s2t("horizontal")),
+                        lY: point.getObjectValue(s2t("backward")).getUnitDoubleValue(s2t("vertical")),
+                        rX: point.getObjectValue(s2t("forward")).getUnitDoubleValue(s2t("horizontal")),
+                        rY: point.getObjectValue(s2t("forward")).getUnitDoubleValue(s2t("vertical")),
+                    })
+                } catch (err){// Not bezier curve, just line to
+                    extend(p, {                        
+                        smooth: false,
+                        lX: p.cX,
+                        lY: p.cY,
+                        rX: p.cX,
+                        rY: p.cY
+                    })
+                };
+                points.push(p);
+                maxRight = Math.max(p.cX, maxRight);
+                minLeft = Math.min(p.cX, minLeft);
+                maxBottom = Math.max(p.cY, maxBottom);
+                minTop = Math.min(p.cY, minTop);
+            };
+            var c = new Shape(extend({
+                points: points,
+                bounds:{
+                    top: minTop,
+                    left: minLeft,
+                    bottom: maxBottom,
+                    right: maxRight
+                },
+                width: maxRight - minLeft,
+                height: maxBottom - minTop,
+                isClosed:arg.getList(s2t("subpathListKey")).getObjectValue(0).getBoolean(s2t("closedSubpath"))
+            },opts));
+            return c;
+        } else { //simple create
+            return new Shape(arg);
+        }
+    }
+})
+
+
+
+//=====================================================Graph singleton object - graphics methods
+var Graph = extend({
+//Function that returns result of blending of objA and objB. Object B is ontop of objA.
+//Possible params: mode, noAlpha
+applyOverlay : function(objA, objB, params){
+    var a = "C", b = "C";
+    params = extend({noAlpha:false}, params); //noAlpha - to do or not alpha-blending
+    if (objA instanceof Gradient) a = "G";
+    if (objB instanceof Gradient) b = "G";
+    var result = this["apply"+a+b+"Overlay"](objA, objB, params);
+    return result;
+},
+//color over color
+applyCCOverlay : function(colorA, colorB, params){
+    params.mode = params.mode || colorB.get("mode");
+    //Reslt of overlay is a mix of blended top layer and bottom origin layer leveraged by opacity-midpoint.
+    return this.proccessBlend[params.mode](colorA, colorB, params.noAlpha);
+},
+//color over gradient
+applyGCOverlay : function(grad, color, params){
+    var steps = grad.get("steps");
+    params.mode = params.mode || color.get("mode");
+    for (var i = 0; i < steps.length; i++){
+        step = steps[i];
+        step.color = this.proccessBlend[params.mode](step.color, color, params.noAplha);
+    }; //TODO: check if we could optimize gradient by abandoning redundant colors 
+    return grad;
+},
+//gradient over color
+applyCGOverlay : function(color, grad, params){
+    var steps = grad.get("steps");
+    params.mode = params.mode || grad.get("mode");
+    for (var i = 0; i < steps.length; i++){
+        var step = steps[i];
+        step.color.a(grad.options.opacity/100 * step.color.a());
+        step.color = this.proccessBlend[params.mode](color, step.color, params.noAlpha);
+    }; //TODO: check if we could optimize gradient by abandoning redundant colors 
+    return grad;
+},
+//gradient over gradient
+applyGGOverlay : function(gradA, gradB, params){
+    if ((gradA.get("angle")+360)%180 == (gradB.get("angle")+360)%180) {
+        // If equal angles or contraverse angles - do gradient;
+        var stepsA = gradA.get("steps");
+        var stepsB = gradB.get("steps");
+        var mode = params.mode || gradB.get("mode");
+        var opacityA = gradA.get("opacity"), opacityB = gradB.get("opacity");
+        var grad = new Gradient({
+            angle: gradB.get("angle")
+        });
+        if (Math.abs(gradA.get("angle") - gradB.get("angle")) % 360 == 180){//if different directions
+            stepsA = gradA.reverse().get("steps");
+        }
+        if (gradA.get("reversed")) stepsA = gradA.reverse().get("steps");
+        if (gradB.get("reversed")) stepsB = gradB.reverse().get("steps");
+        var steps = grad.get("steps");
+        var stoppr = 120;
+        var stepA, stepB, prevStepA, prevStepB;
+        for (var ia = 0, ib = 0; ia<stepsA.length || ib<stepsB.length && stoppr--;){
+            stepB = stepsB[ib] || {location : 100, color : stepB.color}; //end limiter B
+            prevStepB = stepsB[ib-1] || {location : 0, color : stepB.color}; //start limiter B
+            stepA = stepsA[ia] || {location : 100, color : stepA.color}; //end limiter A
+            prevStepA = stepsA[ia-1] || {location : 0, color : stepA.color}; //start limiter A            
+            if (Math.abs( stepB.location - stepA.location ) < 1) {//A==B
+                steps.push({
+                    location: stepB.location,
+                    color: Graph.applyOverlay(stepA.color.applyOpacity(opacityA), stepB.color.applyOpacity(opacityB), {mode: mode})
+                });
+                ia++; ib++;
+            } else if (stepB.location < stepA.location){//B
+                steps.push({
+                    location: stepB.location,
+                    color: Graph.applyOverlay(
+                    Graph.getMidColor( prevStepA.color, stepA.color, (stepB.location - prevStepA.location)/(stepA.location - prevStepA.location)).applyOpacity(opacityA),
+                    stepB.color.applyOpacity(opacityB),
+                    {mode: mode})
+                });
+            ib++;
+            } else if (stepB.location > stepA.location ) {//A
+                steps.push({
+                    location: stepA.location,
+                    color: Greph.applyOverlay(
+                    stepA.color.applyOpacity(opacityA),
+                    Graph.getMidColor(prevStepB.color, stepB.color, (stepA.location - prevStepB.location)/(stepB.location - prevStepB.location)).applyOpacity(opacityB),
+                    {mode:mode})
+                });
+                ia++;
+            } else {
+                $.writeln("Dude, something went wrong in GG overlay: infinite cycling.");
+                ib++; ia++
+            }
+        }
+        return grad;
+    } else {
+        // If angles not equal - do bitmap
+    }
+    
+    
+    /*for (var i = 0; i < steps.length; i++){
+        step = steps[i];
+        step.color = this.proccessBlend[mode](step.color, color);
+    };*/ //TODO: check if we could optimize gradient by abandoning redundant colors 
+    return gradB;
+},
+
+//Object with blend modes proccessings
+//Facts:
+// - layer opacity results only in the end of operations
+// - 
+proccessBlend : {
+    "normal" : function(ca, cb){
+        var c = new Color();
+        c.a(ca.a() + cb.a()*(1-ca.a()));
+        c.r( (cb.r() * cb.a() + ca.r() * (1 - cb.a()) * ca.a()) / c.a() );
+        c.g( (cb.g() * cb.a() + ca.g() * (1 - cb.a()) * ca.a()) / c.a() );
+        c.b( (cb.b() * cb.a() + ca.b() * (1 - cb.a()) * ca.a()) / c.a() );
+        return c;
+    },
+    "darken" : function(ca, cb, noAlpha){
+        var c = new Color();
+        c.a(cb.a());
+        c.r( Math.min(cb.r() , ca.r() ));
+        c.g( Math.min(cb.g() , ca.g() ));
+        c.b( Math.min(cb.b() , ca.b() ));
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "multiply" : function(ca ,cb, noAlpha){
+        var mult = function(base, adj) { return ((base * adj) / 255); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( mult(ca.r() , cb.r() ) );
+        c.g( mult(ca.g(), cb.g() ) );
+        c.b( mult(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },    
+    "colorBurn" : function(ca, cb, noAlpha){
+        var cburn = function(base, adj) { return adj <= 0 ? 0 : Math.max(255 - ((255 - base) * 255 / adj), 0); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( cburn(ca.r() , cb.r() ) );
+        c.g( cburn(ca.g(), cb.g() ) );
+        c.b( cburn(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "linearBurn" : function(ca, cb, noAlpha){
+        var c = new Color();
+        var burn = function(base, adj) { return Math.max(0, (base + adj - 255)); }
+        c.a(cb.a());
+        c.r( burn(ca.r(), cb.r()) );
+        c.g( burn(ca.g(), cb.g()) );
+        c.b( burn(ca.b(), cb.b()) );        
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "darkerColor" : function(ca, cb, noAlpha){
+        var c = new Color();
+        c.a(cb.a());
+        if ( cb.r() * 0.3 + cb.g() * 0.59 + cb.b() * 0.11 > 
+        ca.r() * 0.3 + ca.g() * 0.59 + ca.b()* 0.11) {
+            c.r(ca.r());
+            c.g(ca.g());
+            c.b(ca.b());
+        };
+        return noAlpha ? c : this.normal(ca, c);
+    },
+
+    "lighten" : function(ca, cb, noAlpha){
+        var lighten = function(base, adj) { return Math.max(base, adj); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( lighten(ca.r() , cb.r() ) );
+        c.g( lighten(ca.g(), cb.g() ) );
+        c.b( lighten(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "screen" : function(ca, cb, noAlpha){
+        var screen = function(base, adj) { return (255 - (((255 - base) * (255 - adj)) / 255)); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( screen(ca.r() , cb.r() ) );
+        c.g( screen(ca.g(), cb.g() ) );
+        c.b( screen(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "colorDodge" : function(ca, cb, noAlpha){
+        var cdodge = function(base, adj) { return adj >= 255 ? 255 : Math.min(base * 255 / (255 - adj), 255); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( cdodge(ca.r() , cb.r() ) );
+        c.g( cdodge(ca.g(), cb.g() ) );
+        c.b( cdodge(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "linearDodge" : function(ca,cb,noAlpha){
+        var ldodge = function(base, adj) { return Math.min((base + adj), 255); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( ldodge(ca.r() , cb.r() ) );
+        c.g( ldodge(ca.g(), cb.g() ) );
+        c.b( ldodge(ca.b(), cb.b() ) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "lighterColor" : function(ca, cb, noAlpha){
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    },
+
+    "overlay" : function(ca,cb, noAlpha){
+        var c = new Color();
+        var overlay = function(base, adj) { return (base < 128) ? ((2 * base * adj) / 255) : (255 - (2 * (255 - base) * (255 - adj) / 255)); }      
+        c.a(cb.a());
+        c.r( overlay(ca.r(), cb.r()) );
+        c.g( overlay(ca.g(), cb.g()) );
+        c.b( overlay(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "softLight" : function(ca, cb, noAlpha){
+        var c = new Color();
+        var softlight = function(base, adj) { return (base < 128) ? (((adj>>1) + 64) * base * (2/255)) : (255 - (191 - (adj>>1)) * (255 - base) * (2 / 255)); }
+        c.a(cb.a());
+        c.r( softlight(ca.r(), cb.r()) );
+        c.g( softlight(ca.g(), cb.g()) );
+        c.b( softlight(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "hardLight" : function(ca, cb, noAlpha){
+        var hlight = function() {return adj < 128 ? (2 * base * adj) / 255 : 255 - ((2 * (255 - base) * (255 - adj)) / 255)};
+        var c = new Color();
+        c.a(cb.a());
+        c.r( hlight(ca.r(), cb.r()) );
+        c.g( hlight(ca.g(), cb.g()) );
+        c.b( hlight(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "vividLight" : function(ca, cb, noAlpha){        
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "linearLight" : function(ca, cb, noAlpha){
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "pinLight" : function(ca, cb, noAlpha){
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "hardMix" : function(ca, cb, noAlpha){
+        return noAlpha ? c : this.normal(ca, c);
+    },
+
+    "difference" : function(ca, cb, noAlpha){
+        var diff = function(base, adj) { return Math.abs(base - adj); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( diff(ca.r(), cb.r()) );
+        c.g( diff(ca.g(), cb.g()) );
+        c.b( diff(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "exclusion" : function(ca, cb, noAlpha){
+        var excl = function(base, adj) { return 255 - (((255 - base) * (255 - adj) / 255) + (base * adj / 255));}
+        var c = new Color();
+        c.a(cb.a());
+        c.r( excl(ca.r(), cb.r()) );
+        c.g( excl(ca.g(), cb.g()) );
+        c.b( excl(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "subtract" : function(ca, cb, noAlpha){
+        var sub = function(base, adj) { return Math.max((base - adj), 0); }
+        var c = new Color();
+        c.a(cb.a());
+        c.r( sub(ca.r(), cb.r()) );
+        c.g( sub(ca.g(), cb.g()) );
+        c.b( sub(ca.b(), cb.b()) );
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "divide" : function(ca, cb, noAlpha){      
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    },
+
+    "hue" : function(ca, cb, noAlpha){   
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+
+    },
+    "saturation" : function(ca, cb, noAlpha){     
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "color" : function(ca, cb, noAlpha){        
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    },
+    "luminosity" : function(ca, cb, noAlpha){      
+        var c = new Color();
+        return noAlpha ? c : this.normal(ca, c);
+    }
+},
+    
+//Return color between A & B
+getMidColor : function (colorA, colorB, midpoint) {
+     var self = this,
+    color = new Color();
+    midpoint = midpoint || .5;
+    midpoint = self.max(self.min(midpoint, 1), 0);
+    color.r(self.mid( colorA.r(), colorB.r(), midpoint ));
+    color.g(self.mid( colorA.g(), colorB.g(), midpoint ));
+    color.b(self.mid( colorA.b(), colorB.b(), midpoint ));
+    color.a(self.mid( colorA.a(), colorB.a(), midpoint ))
+    return colorObj;
+},
+//Return value between a & b based on leverage.
+mid : function(a,b,leverage){
+   return a*leverage + b*(1-leverage);
+}
+
+//another f
+
+})
+
+
+

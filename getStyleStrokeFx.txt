@@ -1,0 +1,40 @@
+function hasLayerFX(){  
+     var ref = new ActionReference();  
+     ref.putEnumerated( charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );   
+     return  executeActionGet(ref).hasKey(stringIDToTypeID('layerEffects'));  
+};  
+  
+function hasStrokeFX(){  
+     var res = false;  
+     var ref = new ActionReference();  
+     ref.putEnumerated( charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );   
+     var hasFX =  executeActionGet(ref).hasKey(stringIDToTypeID('layerEffects'));  
+     if ( hasFX ){  
+          var ref = new ActionReference();  
+          ref.putEnumerated( charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );   
+          res = executeActionGet(ref).getObjectValue(stringIDToTypeID('layerEffects')).hasKey(stringIDToTypeID('frameFX'));  
+     }  
+     return res;  
+};  
+  
+function getStrokeSize(){  
+    try{  
+        var ref = new ActionReference();  
+        ref.putEnumerated( charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );   
+        var desc = executeActionGet(ref).getObjectValue(stringIDToTypeID('layerEffects')).getObjectValue(stringIDToTypeID('frameFX'));  
+        return desc.getUnitDoubleValue(stringIDToTypeID('size'));  
+    }catch(e){}  
+};  
+
+/*
+'dropShadow'
+'innerShadow'
+'outerGlow'
+'innerGlow'
+'bevelEmboss'
+'solidFill' // color overlay
+'gradientFill' // gradient overlay
+'patternFill' // pattern overlay
+'chromeFX' // satin
+'frameFX' // stroke
+*/

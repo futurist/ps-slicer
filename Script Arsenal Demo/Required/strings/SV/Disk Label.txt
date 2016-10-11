@@ -1,0 +1,1 @@
+This script prepares an image for printing on a CD/DVD. ~ Etiketter ~ ß

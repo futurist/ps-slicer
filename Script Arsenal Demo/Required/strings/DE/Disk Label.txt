@@ -1,0 +1,1 @@
+Dieses Skript bereitet ein Bild vor für den Druck auf eine CD oder DVD. ~ CD/DVD Etikett ~ ß

@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Konfetti</title>
+<link href="../px/page.css" rel="stylesheet" type="text/css">
+<!-- saved from url=(0013)about:internet -->
+<script language="JavaScript">
+<!--
+function langMenu( ){ 
+if (document.langForm.jumpToLang.value != "null") {
+var usrLang = document.langForm.jumpToLang.value;
+var docPathArray = document.URL.split("\/");
+docPathArray = docPathArray[docPathArray.length-1].split("\\");
+var pageName = docPathArray[docPathArray.length-1];
+var langPage = "../"+usrLang+"/"+pageName;
+document.location.href = langPage
+}
+}
+
+function setCookie ( name, value,expires, path ) {
+      document.cookie = name + "=" + escape(value) +
+	    ((expires) ? "; expires=" + expires.toGMTString() : "") +
+        ((path) ? "; path=" + path : "")
+}
+var today = new Date();
+var expiry = new Date( today.getTime() + 31536000000 );
+setCookie ( "lastSAPageD1", document.URL, expiry, "/" );
+//-->
+</script>
+</head><body>
+
+<table align="center" cellpadding="6">
+<tr>
+  <td height="40" align="center" valign="bottom">
+<script language="JavaScript">
+<!--
+ document.write (' <form name="langForm"  class="text"> '+
+ '<select name="jumpToLang" class="lForm" onChange="langMenu()">'+    
+ '<option value="en">English</option>'+ 
+ '<option value="de" selected>German - Deutsch</option> '+
+ '<option value="ru">Russian - Русский</option> '+
+ '</select> '+
+ '</form> '
+ )
+ //-->
+</script>
+<noscript>
+<a href="../en/index.htm"><img src="../px/lang-en.png" width="30" height="20" border="0" style="padding-right:24px"></a>
+<a href="../de/index.htm"><img src="../px/lang-de.png" width="30" height="20" border="0" style="padding-right:24px"></a> 
+<a href="../ru/index.htm"><img src="../px/lang-ru.png" width="30" height="20" border="0"></a>
+</noscript>			  
+  </td>
+  <td height="40" colspan="2"><h1>Konfetti (Confetti)</h1></td>
+</tr>
+<tr>
+      <td valign="top"><div class="toc">
+        <table border="0" cellspacing="0" cellpadding="2">
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod+.png" width="15" height="11"><a href="index.htm">Beginn</a></td>
+          </tr>
+          <tr>
+            <td height="2"></td>
+          </tr>
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="scripts.htm">Skripten</a></td>
+          </tr>
+          <tr>
+            <td><ul>
+              <li><a href="aerograph.htm">Spritzpistole</a></li>
+              <li><a href="burnt-edges.htm">Verbrannt</a></li>
+              <li><a href="close-others.htm">Übrige schließen</a></li>
+              <li><a href="confetti.htm">Konfetti</a></li>
+              <li><a href="cross-processing.htm">Crossentwicklung</a></li>
+              <li><a href="disk-label.htm">CD/DVD Etikett</a></li>
+              <li><a href="extend-canvas.htm">Arbeitsfläche ausdehnen</a></li>
+              <li><a href="film-edges.htm">Filmränder</a></li>
+              <li><a href="illustration.htm">Illustration</a></li>
+              <li><a href="open-all-recent.htm">Zuletzt bearbeitet</a></li>
+              <li><a href="quick-shadow.htm">Schatten</a></li>
+              <li><a href="torn-edges.htm">Gerissener Rand</a></li>
+              <li><a href="water-drops.htm">Wassertropfen</a></li>
+              <li><a href="wavy-edges.htm">Welliger Rand</a></li>
+            </ul></td>
+          </tr>
+          <tr>
+            <td class="chapter"><a href="http://script-arsenal.com/buy-script-arsenal.htm">Voll Version kaufen</a></td>
+          </tr>
+        </table>
+      </div></td>
+  <td width="360" valign="top" class="text"><p><img src="../px/ico/confetti.png" width="22" height="20" align="absmiddle" style="margin-right:16px">Dieses Skript streut Kreise und Sternchen verschiedener Form, Größe und Farbe aufs Bild.</p>
+    <ol>
+      <li>Klicken Sie in der Werkzeugpalette auf den Indikator der Vordergrundfarbe und wählen Sie eine Grundfarbe.  Wünschen Sie sehr farbenfrohe Konfetti, dann wählen Sie am besten ein sattes Hellrot oder Gelb.</li>
+      <li>Starten Sie das Skript „Konfetti“.</li>
+      <li>Oben im neuen Dialogfenster wählen Sie eine oder mehrere Figuren für die Form der Konfetti.</li>
+      <li>Mit dem Schieberegler „Anzahl“ (&quot;Quantity“)  stellen Sie die gewünschte Anzahl ein.  Bedenken Sie dabei: je höher Sie den Wert dieses Parameters setzen, desto länger dauert die Ausführung des Skriptes.</li>
+      <li>Der Regler „Größe“ (Size) gibt eine Grundgröße des Elementes vor.  Voreingestellt ist der Wert auf 8% der kürzeren Bildlänge.</li>
+      <li>Der Parameter „Überschneidung“ (Overlap) gibt ein Maß für die zulässige Überlagerung benachbarter Figuren vor.</li>
+      <li>Mit dem Regler „Deckkraft“ (Opacity) bestimmen Sie die mittlere Deckkraft der Figuren.
+      <p>Die Regler im zweiten Abschnitt liefern die zulässigen Abweichungen von diesen Grundwerten der einzelnen  Figureneigenschaften.</p>
+      </li>
+
+      <li>Der Parameter „Größe-Jitter“ (Size Jitter) verantwortet die Streubreite der Elemente-Größe.</li>
+      <li>Der Parameter „Farbton-Jitter“ (Hue Jitter) liefert die zulässige Streuung der Farbtemperatur. Ist beispielsweise die Hintergrundfarbe Hellgelb, dann werden bei dem Wert 0% alle Elemente gelb; bei 100% ist jede grelle Farbe erlaubt (Hellrot, Hellgrün usw.).</li>
+      <li>Der „Sättigungs-Jitter“ verantwortet den Streubereich der Farbsättigung.</li>
+      <li>Der „Helligkeits-Jitter“ (Brightness Jitter) liefert die zulässige Abweichung von der Helligkeit der Grundfarbe.</li>
+      <li>Mit dem Regler „Deckkraft-Jitter“ (Opacity Jitter) bestimmen Sie die Streuung der Deckkraft der Figuren.</li>
+      <li>Haben Sie das Skript angewendet, wird jedes Element auf einer eigenen Vektorebene liegen.  Haben Sie zuvor das Häkchen „Ebenen gruppieren“ gesetzt, vereint das Skript automatisch diese Ebenen in eine Gruppe.
+      <p>Berücksichtigen Sie, dass das Gruppieren hunderter Ebenen bei diesem Skript einige Minuten dauert.
+      </li>
+    </ol>
+
+    <table class="arr">
+      <tr align="center" valign="middle">
+        <td align="right"><a href="close-others.htm"><img src="../px/prev.gif" alt="Previous" width="18" height="19"></a></td>
+        <td width="40"></td>
+        <td align="left"><a href="cross-processing.htm"><img src="../px/next.gif" alt="Next" width="18" height="19"></a></td>
+        </tr>
+    </table>
+    </td>
+  <td align="center" valign="top"><p><img src="../px/confetti.jpg" width="350" height="263"></p>
+    <p><img src="../px/confetti-dia.png" width="396" height="523"></p>
+    <p><img src="../px/confetti-layers.png" width="261" height="352"></td>
+  </tr>
+
+  </table>
+</body>
+</html>

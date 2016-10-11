@@ -1,0 +1,187 @@
+// helper function for working with descriptors  
+function getActiveLayerProperty( psKey, psType ) {  
+    var ref = new ActionReference();  
+    ref.putProperty( charIDToTypeID( 'Prpr' ), psKey );  
+    ref.putEnumerated( charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt') );  
+    if( undefined == psType ){  
+      return executeActionGet( ref ).getObjectValue( psKey );  
+    }else{  
+        return executeActionGet( ref );  
+    }  
+};  
+function duplicateDescriptor( descriptor ) {  
+    var newDescriptor = new ActionDescriptor;  
+    newDescriptor.fromStream( descriptor.toStream() );  
+    return newDescriptor;  
+};  
+function localizeDescriptor( desc ) {  
+    var stream, pointer, zStringLength, zstring, localized_string, newZStringLength, previousStream, followingStream, newDesc;  
+    stream = desc.toStream();  
+    while( true ) {  
+        pointer = stream.search(/TEXT....\x00\$\x00\$\x00\$/);  
+        if( pointer === -1 ) {  
+            break;  
+        }  
+        zStringLength = getLongFromStream( stream, pointer + 4 );  
+        zstring = readUnicode( stream.substr( pointer + 8, ( zStringLength - 1 ) * 2) );  
+        localized_string = ( localize( zstring ) ) + '\u0000';  
+        newZStringLength = localized_string.length;  
+        previousStream = stream.slice( 0, pointer);  
+        followingStream = stream.slice( pointer + 8 + zStringLength * 2);  
+        stream = previousStream.concat( 'TEXT', longToString( newZStringLength ), bytesToUnicode( localized_string ), followingStream );  
+    }  
+    newDesc = new ActionDescriptor();  
+    newDesc.fromStream( stream );  
+    return newDesc;  
+};  
+function getShortFromStream( stream, pointer ) {  
+    var hi, low;  
+    hi = stream.charCodeAt( pointer ) << 8 ;  
+    low = stream.charCodeAt( pointer + 1 );  
+    return hi + low;  
+ };  
+function getLongFromStream( stream, pointer ) {  
+    var hi, low;  
+    hi = getShortFromStream( stream, pointer) << 16;  
+    low = getShortFromStream( stream, pointer + 2);  
+    return hi + low;  
+};  
+function readUnicode( unicode ) {  
+    var string = "";  
+    for( i = pointer = 0; pointer < unicode.length; i = pointer += 2) {  
+        string +=String.fromCharCode( getShortFromStream( unicode, pointer ) );  
+    }  
+    return string;  
+};  
+function longToString( longInteger ) {  
+    var string;  
+    string = String.fromCharCode( longInteger >>> 24 );  
+    string += String.fromCharCode( longInteger << 8 >>> 24 );  
+    string += String.fromCharCode( longInteger << 16 >>> 24 );  
+    string += String.fromCharCode( longInteger << 24 >>> 24 );  
+    return string;  
+};  
+function bytesToUnicode( bytes ) {  
+    var unicode = "", char_code, charIndex;  
+    for( charIndex  = 0; charIndex < bytes.length; charIndex ++ ) {  
+        char_code = bytes.charCodeAt( charIndex );  
+        unicode += String.fromCharCode(char_code >> 8 ) +  String.fromCharCode( char_code & 0xff );  
+    }  
+    return unicode;  
+};  
+  
+  
+function setInnerGlow( opts ) {  
+    var layerEffects, newLayerEffects, currentDesc, newDesc, colorDesc, newLayerEffects, layerDesc, targetDesc, setDesc;  
+    layerEffects = getActiveLayerProperty( charIDToTypeID( 'Lefx' ) );  
+    newLayerEffects = duplicateDescriptor( layerEffects );  
+    currentDesc = layerEffects.getObjectValue( charIDToTypeID( 'IrGl' ) );  
+    newDesc = duplicateDescriptor( currentDesc );  
+      
+    if(opts.enabled != undefined) newDesc.putBoolean( charIDToTypeID('enab'), opts.enabled );  
+    if(opts.blendmode != undefined) newDesc.putEnumerated( charIDToTypeID('Md  '), charIDToTypeID('BlnM'), opts.blendmode );  
+    if(opts.color != undefined){  
+        var colorDesc = new ActionDescriptor();  
+        colorDesc.putDouble( charIDToTypeID('Rd  '), opts.color.rgb.red );  
+        colorDesc.putDouble( charIDToTypeID('Grn '), opts.color.rgb.green );  
+        colorDesc.putDouble( charIDToTypeID('Bl  '), opts.color.rgb.blue );  
+        newDesc.putObject( charIDToTypeID('Clr '), charIDToTypeID('RGBC'), colorDesc );  
+    }  
+    if(opts.opacity != undefined) newDesc.putUnitDouble( charIDToTypeID('Opct'), charIDToTypeID('#Prc'), opts.opacity );  
+    if(opts.technique != undefined) newDesc.putEnumerated( charIDToTypeID('GlwT'), charIDToTypeID('BETE'), opts.technique );  
+    if(opts.choke != undefined)newDesc.putUnitDouble( charIDToTypeID('Ckmt'), charIDToTypeID('#Pxl'), opts.choke );  
+    if(opts.size != undefined) newDesc.putUnitDouble( charIDToTypeID('blur'), charIDToTypeID('#Pxl'), opts.size );  
+    if(opts.jitter != undefined) newDesc.putUnitDouble( charIDToTypeID('ShdN'), charIDToTypeID('#Prc'), opts.jitter );  
+    if(opts.noise != undefined) newDesc.putUnitDouble( charIDToTypeID('Nose'), charIDToTypeID('#Prc'), opts.noise );  
+    if(opts.antialias != undefined) newDesc.putBoolean( charIDToTypeID('AntA'), false );  
+    if(opts.source != undefined) newDesc.putEnumerated( charIDToTypeID('glwS'), charIDToTypeID('IGSr'), opts.source );  
+    if(opts.contourName != undefined){  
+        var contourrDesc = new ActionDescriptor();  
+        contourrDesc.putString( charIDToTypeID('Nm  '), opts.contourName );  
+        newDesc.putObject( charIDToTypeID('TrnS'), charIDToTypeID('ShpC'), contourrDesc );  
+    }  
+    if(opts.range != undefined) newDesc.putUnitDouble( charIDToTypeID('Inpr'), charIDToTypeID('#Prc'), opts.range );  
+    newLayerEffects.putObject( charIDToTypeID('IrGl'), charIDToTypeID('IrGl'), newDesc );  
+      
+      
+    newLayerEffects = localizeDescriptor( newLayerEffects );  
+    layerDesc = new ActionDescriptor();  
+    layerDesc.putObject( charIDToTypeID('Lefx'), charIDToTypeID('lfxv'), newLayerEffects);  
+    targetDesc = new ActionReference();  
+    targetDesc.putEnumerated( charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt') );  
+    setDesc = new ActionDescriptor;  
+    setDesc.putObject( charIDToTypeID('T   '), charIDToTypeID('Lyr '), layerDesc );  
+    setDesc.putReference( charIDToTypeID('null' ), targetDesc );  
+    executeAction(charIDToTypeID('setd'), setDesc, DialogModes.NO);  
+};  
+// you only need to define the option you want to change.  
+// undefined options will retain the current setting.  
+var InterGlowOptions = {};  
+// InterGlowOptions.enabled = true;  
+// InterGlowOptions.blendmode = charIDToTypeID('Drkn');  
+InterGlowOptions.color = app.foregroundColor;  
+// InterGlowOptions.opacity = 80;  
+// InnerShadow.technique = charIDToTypeID('PrBL');  
+// InterGlowOptions.choke = 100;  
+// InterGlowOptions.size = 32;  
+// InterGlowOptions.noise = 52;  
+// InterGlowOptions.jitter = 21;  
+// InterGlowOptions.antialias = true;  
+// InterGlowOptions.contourName = "$$$/Contours/Defaults/HalfRound=Half Round";  
+// InterGlowOptions.range = 45;  
+InterGlowOptions.source = charIDToTypeID('SrcC');  
+  
+/*  blend mode ID  
+charIDToTypeID( "Nrml" )// Normal  
+charIDToTypeID( "Dslv" )// Dissolve  
+charIDToTypeID( "Drkn" )// Darken  
+charIDToTypeID( "Mltp" )// Multiply  
+charIDToTypeID( "CBrn" )// Color Burn  
+stringIDToTypeID( "linearBurn" )  
+stringIDToTypeID( "darkerColor" )  
+charIDToTypeID( "Lghn" )// Lighten  
+charIDToTypeID( "Scrn" )// Screen  
+charIDToTypeID( "CDdg" )// Color Dodge  
+stringIDToTypeID( "linearDodge" )  
+stringIDToTypeID( "lighterColor" )  
+charIDToTypeID( "Ovrl" )// Overlay  
+charIDToTypeID( "SftL" )// Soft Light  
+charIDToTypeID( "HrdL" )// Hard Light  
+stringIDToTypeID( "vividLight" )  
+stringIDToTypeID( "linearLight" )  
+stringIDToTypeID( "pinLight" )  
+stringIDToTypeID( "hardMix" )  
+charIDToTypeID( "Dfrn" )// Difference  
+charIDToTypeID( "Xclu" )// Exclusion  
+stringIDToTypeID( "blendSubtraction" )  
+stringIDToTypeID( "blendDivide" )  
+charIDToTypeID( "H   " )// Hue  
+charIDToTypeID( "Strt" )// Saturation  
+charIDToTypeID( "Clr " )// Color  
+charIDToTypeID( "Lmns" )// Luminosity  
+  
+// contour name string  
+ "$$$/Contours/Defaults/Linear=Linear"  
+ "$$$/Contours/Defaults/Cone=Cone"  
+ "$$$/Contours/Defaults/ConeInverted=Cone - Inverted"  
+ "$$$/Contours/Defaults/CoveDeep=Cove - Deep"  
+ "$$$/Contours/Defaults/CoveShallow=Cove - Shallow"  
+ "$$$/Contours/Defaults/Gaussian=Gaussian"  
+ "$$$/Contours/Defaults/HalfRound=Half Round"  
+ "$$$/Contours/Defaults/Ring=Ring"  
+ "$$$/Contours/Defaults/DoubleRing=Ring - Double"  
+  "$$$/Contours/Defaults/RollingSlopeDescending=Rolling Slope - Descending"  
+  "$$$/Contours/Defaults/RoundedSteps=Rounded Steps"  
+  "$$$/Contours/Defaults/Sawtooth1=Sawtooth 1"  
+    
+// technique IDs  
+charIDToTypeID('PrBL');  
+charIDToTypeID('Scrn');  
+  
+// source ids  
+charIDToTypeID('SrcC');  
+charIDToTypeID('SrcE');  
+  */  
+  
+setInnerGlow( InterGlowOptions );  
+

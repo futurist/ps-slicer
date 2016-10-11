@@ -1,0 +1,1 @@
+This script adds any script to the Effects palette ~ Import Script ~ Volver a cargar ~ Cancelar ~ OK ~ Guardar configuración y cerrar cuadro de diálogo ~ Guardar en la categoría: ~ Nombre del script: ~ Revelar "MediaDatabase.db3" en Finder ~ ß

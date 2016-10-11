@@ -1,0 +1,1 @@
+This script closes without saving (!) all the opened **documents except for the currently active one. ~ Chiudi le altre immagini ~ ß

@@ -1,0 +1,1 @@
+This script imitates a paper print with rudely ripped edges. ~ Gescheurde rand ~ ß

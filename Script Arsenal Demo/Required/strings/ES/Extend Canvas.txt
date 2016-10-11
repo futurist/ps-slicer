@@ -1,0 +1,1 @@
+Este script le permite cambiar cada lado **del lienzo de la imagen individual ~ Ampliar Lienzo ~ Volver a cargar ~ Cancelar ~ OK ~ Guardar configuración y cerrar cuadro de diálogo ~ Todos los archivos abiertos ~ ß

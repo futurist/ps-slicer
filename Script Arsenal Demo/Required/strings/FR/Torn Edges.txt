@@ -1,0 +1,1 @@
+Ce script ajoute à l'image une sorte de marge déchirée. ~ Bords déchirés ~ ß

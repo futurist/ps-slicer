@@ -1,0 +1,224 @@
+﻿#script "Photoshopr object"
+#target photoshop
+
+
+//Main class. There's app settings, environment, utils and so on.
+function Photoshopr(){
+    this._init();
+}
+
+Photoshopr.prototype = {
+    //Default settings
+    settings : {
+        showPrefixes : true, //temptation to get rid of: who da hell doesn't need prefixes?
+        colorFormat : 'rgb', //rgb, hsl, hex
+        wrapLines: true,
+        comments: false,
+        makeUnsupportedCSS3: false, //
+        //deprecated - do border always
+        //strokeType: 'box-shadow', //'box-shadow', 'border'
+        //deprecated - do text always
+        //textProperties: true, //do text layers
+        //deprecated - do merge always
+        //mergeBackground: true,
+        bindToCopyFx: false, //Copy css to clipboard or not when copying layer style
+        showResultDialog: true //Show dialog with result or copy to clipboard
+    },
+
+
+    //
+    _init: function(){
+        var self = this;
+        self.tempFolder = Folder.temp.fsName; //folderForTempFiles
+        self.loadSettings();
+        self.DELIM = self.settings.wrapLines ? "\n" : " ";
+        
+        app.preferences.exportClipboard = true;
+        return self;
+    },
+    
+    
+    //load settings from json
+    loadSettings : function(){
+        var self = this;        
+        var f = new File (Folder.userData + "/settings.json");
+        //self.resetSettings();
+        try {
+            if (f.exists) {//Load existing settings            
+                f.open('r');
+                var settRaw = f.read();
+                //$.writeln("Existing settings");
+                self.settings = JSON.parse(settRaw);
+                f.close();
+            } else {//Make new settings based on defaults
+                f.open('w');
+                //$.writeln('New settings file');
+                f.write(JSON.stringify(self.settings));
+                f.close();
+            }
+        } catch (err) {//If something went wrong - anyway - create new settings
+            self.resetSettings();
+        }
+        return self;
+    },
+
+
+    //Save current settings to json
+    saveSettings : function(){
+        var self = this;        
+        var f = new File (Folder.userData + "/settings.json");
+         f.open('w');
+        //$.writeln('Save settings file\n');
+        f.write(JSON.stringify(self.settings));
+        f.close();
+        return self;
+    },
+
+
+    //Just removes settings file
+    resetSettings : function(){
+        var f = new File (Folder.userData + "/settings.json");
+        if(f.exists) f.remove();
+        f.close();
+        return this;
+    },
+
+
+    //Bind notifiers of all actions
+    bindNotifiers : function(){
+        var self = this;
+        app.notifiersEnabled = true
+        app.notifiers.removeAll();
+        //TODO:copying fx
+        //var copyFx = new File("./../copyFx.jsx");//File(app.path +"/Presets/Scripts/copyFx.jsx");
+        //app.notifiers.add("CpFX", eventFile);
+        //copying path
+        return self;
+    },
+
+
+    //TODO: do a textlayer way to copy to clipboard
+    copy : function(str){
+        var self = this;
+        /* Clippy.exe method. A big cons - launches the console.*/
+        var clipTxtFile =new File(self.tempFolder + "/ClipBoard.txt"); 
+        clipTxtFile.open('w'); 
+        clipTxtFile.write(str); 
+        clipTxtFile.close();
+        // use the clip.exe to copy the contents of the textfile to the windows clipboard
+        var clipBatFile =new File(self.tempFolder + "/ClipBoard.bat"); 
+        clipBatFile.open('w'); 
+        clipBatFile.writeln("cat \"" + self.tempFolder + "/ClipBoard.txt\"|clip"); 
+        clipBatFile.close(); 
+        clipBatFile.execute();
+
+        /*TODO: Text layer mathod. Is a way better.*/
+        //var textLayer = new ArtLayer();
+        //var newLayer = activeDocument.artLayers.add(); // Create a new ArtLayer object
+        //newLayer.name = "My Layer"; // name it for later reference
+        //var layerRef = activeDocument.artLayers.getByName("My Layer");
+        //$.writeln(doc.selection)
+        //activeDocument.activeLayer.copy();
+        //doc.selection.selectAll();
+        //docRef.selection.copy(true);
+        return self;
+    },
+
+
+    //Get active layer property in common case (based on psKey)
+    getActiveLayerProperty : function ( psKey ) {
+        var ref;
+        ref = new ActionReference();
+        ref.putProperty( c2t( 'Prpr' ), psKey );
+        ref.putEnumerated( c2t('Lyr '), c2t('Ordn'), c2t('Trgt') );     
+        var res = executeActionGet( ref );
+        try {
+            return res.getObjectValue( psKey );
+        } catch (err) {
+            //alert("Background layer has no FX.");
+            return false;
+        }
+    },
+
+    //Get active layer descriptor
+    getActiveLayerDescriptor : function (){
+        var ref = new ActionReference();
+        var key = c2t("Lyr "); //default ref key
+        ref.putEnumerated( key, c2t('Ordn'), c2t('Trgt') );
+        return executeActionGet( ref );
+    },
+
+    //Get active layer mask
+    getActiveVectorMaskDescriptor : function(){
+        var ref = new ActionReference();
+        //ref.putEnumerated( c2t("Lyr "), c2t('Ordn'), c2t('Trgt') );
+        ref.putEnumerated(c2t("Path"), c2t("Path"), s2t("vectorMask"))
+        var desc = executeActionGet( ref );
+        return desc;
+    },
+    
+    //Combine vector mask paths of active layer
+    combineActiveLayerPaths : function(){
+        // select vector mask
+        var idslct = charIDToTypeID( "slct" );
+            var desc52 = new ActionDescriptor();
+            var idnull = charIDToTypeID( "null" );
+                var ref48 = new ActionReference();
+                var idPath = charIDToTypeID( "Path" );
+                var idPath = charIDToTypeID( "Path" );
+                var idvectorMask = stringIDToTypeID( "vectorMask" );
+                ref48.putEnumerated( idPath, idPath, idvectorMask );
+                var idLyr = charIDToTypeID( "Lyr " );
+                var idOrdn = charIDToTypeID( "Ordn" );
+                var idTrgt = charIDToTypeID( "Trgt" );
+                ref48.putEnumerated( idLyr, idOrdn, idTrgt );
+            desc52.putReference( idnull, ref48 );
+        executeAction( idslct, desc52, DialogModes.NO );
+        //combine all paths
+        var idcombine = stringIDToTypeID( "combine" );
+            var desc53 = new ActionDescriptor();
+            var idnull = charIDToTypeID( "null" );
+                var ref49 = new ActionReference();
+                var idPath = charIDToTypeID( "Path" );
+                var idOrdn = charIDToTypeID( "Ordn" );
+                var idTrgt = charIDToTypeID( "Trgt" );
+                ref49.putEnumerated( idPath, idOrdn, idTrgt );
+            desc53.putReference( idnull, ref49 );
+        executeAction( idcombine, desc53, DialogModes.NO );
+    },
+    
+    //Go to history state i steps before/after (i is negative/positive)
+    historyStep: function(n){
+        if (n < 0){ //back
+            var idslct = charIDToTypeID( "slct" );
+                var desc57 = new ActionDescriptor();
+                var idnull = charIDToTypeID( "null" );
+                    var ref53 = new ActionReference();
+                    var idHstS = charIDToTypeID( "HstS" );
+                    var idOrdn = charIDToTypeID( "Ordn" );
+                    var idPrvs = charIDToTypeID( "Prvs" );
+                    ref53.putEnumerated( idHstS, idOrdn, idPrvs );
+                desc57.putReference( idnull, ref53 );
+            for (var i = n; i++;){
+            executeAction( idslct, desc57, DialogModes.NO );
+            }
+        } else if (n > 0){ //forward
+            var idslct = charIDToTypeID( "slct" );
+                var desc56 = new ActionDescriptor();
+                var idnull = charIDToTypeID( "null" );
+                    var ref52 = new ActionReference();
+                    var idHstS = charIDToTypeID( "HstS" );
+                    var idOrdn = charIDToTypeID( "Ordn" );
+                    var idNxt = charIDToTypeID( "Nxt " );
+                    ref52.putEnumerated( idHstS, idOrdn, idNxt );
+                desc56.putReference( idnull, ref52 );                
+            for (var i = n; i--;){
+            executeAction( idslct, desc56, DialogModes.NO );
+            }
+        }        
+    }
+
+    
+}
+
+var photoshopr = new Photoshopr;

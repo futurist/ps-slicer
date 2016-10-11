@@ -1,0 +1,49 @@
+function getGradientInfo(){  
+    try{  
+        var ref = new ActionReference();  
+        ref.putEnumerated( charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );  
+          // get gradient descriptor  
+        var desc = executeActionGet(ref).getObjectValue(stringIDToTypeID('layerEffects')).getObjectValue(stringIDToTypeID('gradientFill')).getObjectValue(stringIDToTypeID('gradient'));  
+          // get an ActionList of color settings used in gradient  
+          var colorsList = desc.getList(stringIDToTypeID('colors'));  
+          var count = colorsList.count;// the number of color stops in gradient  
+          var colors = [];// array to hold custom color objects  
+          for( var c = 0; c < count; c++ ){  
+               desc = colorsList.getObjectValue(c);// get color descriptor  
+               var colorStop = {};// object to hold color stop info  
+               colorStop.location = desc.getInteger(stringIDToTypeID('location'));  
+               colorStop.midpoint = desc.getInteger(stringIDToTypeID('midpoint'));  
+               colorStop.type = typeIDToStringID(desc.getEnumerationValue(stringIDToTypeID('type')));  
+                 
+               var colorDesc = desc.getObjectValue(stringIDToTypeID('color'));  
+               var color = new SolidColor();  
+               switch(app.activeDocument.mode){  
+                    case DocumentMode.GRAYSCALE:  
+                         color.gray.gray = colorDesc.getDouble(charIDToTypeID('Gry '));  
+                         break;  
+                    case DocumentMode.RGB:  
+                         color.rgb.red = colorDesc.getDouble(charIDToTypeID('Rd  '));  
+                         color.rgb.green = colorDesc.getDouble(charIDToTypeID('Grn '));  
+                         color.rgb.blue = colorDesc.getDouble(charIDToTypeID('Bl  '));  
+                         break;  
+                    case DocumentMode.CMYK:  
+                         color.cmyk.cyan = colorDesc.getDouble(charIDToTypeID('Cyn '));  
+                         color.cmyk.magenta = colorDesc.getDouble(charIDToTypeID('Mgnt'));  
+                         color.cmyk.yellow = colorDesc.getDouble(charIDToTypeID('Ylw '));  
+                         color.cmyk.black = colorDesc.getDouble(charIDToTypeID('Blck'));  
+                         break;  
+                    case DocumentMode.LAB:  
+                         color.lab.l = colorDesc.getDouble(charIDToTypeID('Lmnc'));  
+                         color.lab.a = colorDesc.getDouble(charIDToTypeID('A   '));  
+                         color.lab.b = colorDesc.getDouble(charIDToTypeID('B   '));  
+                         break;  
+               }  
+               colorStop.color = color;  
+               colors.push(colorStop);  
+          }  
+          return colors;  
+    }catch(e){}  
+};  
+var colorstops = getGradientInfo();  
+alert('first color stop color(rgb):\r'+colorstops[0].color.rgb.red+','+colorstops[0].color.rgb.green+','+colorstops[0].color.rgb.blue);  
+

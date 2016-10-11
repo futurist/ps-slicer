@@ -1,0 +1,1 @@
+Dieses Skript schliesst alle geöffneten **Dateien ausser der zur Zeit aktiven ohne (!) zu speichern. ~ Übrige Dokumente schließen

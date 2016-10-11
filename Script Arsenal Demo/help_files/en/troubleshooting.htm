@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Troubleshooting</title>
+<link href="../px/page.css" rel="stylesheet" type="text/css">
+<!-- saved from url=(0013)about:internet -->
+<script language="JavaScript">
+<!--
+function langMenu( ){ 
+if (document.langForm.jumpToLang.value != "null") {
+var usrLang = document.langForm.jumpToLang.value;
+var docPathArray = document.URL.split("\/");
+docPathArray = docPathArray[docPathArray.length-1].split("\\");
+var pageName = docPathArray[docPathArray.length-1];
+var langPage = "../"+usrLang+"/"+pageName;
+document.location.href = langPage
+}
+}
+
+function setCookie ( name, value,expires, path ) {
+      document.cookie = name + "=" + escape(value) +
+	    ((expires) ? "; expires=" + expires.toGMTString() : "") +
+        ((path) ? "; path=" + path : "")
+}
+var today = new Date();
+var expiry = new Date( today.getTime() + 31536000000 );
+setCookie ( "lastSAPageD1", document.URL, expiry, "/" );
+//-->
+</script>
+</head><body>
+
+<table width="900" align="center" cellpadding="6">
+<tr>
+  <td height="40" align="center" valign="bottom">
+<script language="JavaScript">
+<!--
+ document.write (' <form name="langForm"  class="text"> '+
+ '<select name="jumpToLang" class="lForm" onChange="langMenu()">'+    
+ '<option value="en" selected>English</option>'+ 
+ '<option value="de">German - Deutsch</option> '+
+ '<option value="ru">Russian - Русский</option> '+
+ '</select> '+
+ '</form> '
+ )
+ //-->
+</script>
+<noscript>
+<a href="../en/index.htm"><img src="../px/lang-en.png" width="30" height="20" border="0" style="padding-right:24px"></a>
+<a href="../de/index.htm"><img src="../px/lang-de.png" width="30" height="20" border="0" style="padding-right:24px"></a> 
+<a href="../ru/index.htm"><img src="../px/lang-ru.png" width="30" height="20" border="0"></a>
+</noscript>			  
+  </td>
+  <td height="40"><h1>Troubleshooting</h1></td>
+</tr>
+<tr>
+      <td valign="top"><div class="toc">
+        <table border="0" cellspacing="0" cellpadding="2">
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="index.htm">Getting started</a></td>
+          </tr>
+          <tr>
+            <td><ul>
+              <li> <a href="index.htm">Setup</a></li>
+              <li><a href="catalog.htm">Script Arsenal Dialog</a></li>
+              <li><a href="script-to-menu.htm">Add Scripts to Menu</a></li>
+              <li><a href="script-to-action.htm">Add Scripts to Actions</a></li>
+              <li><a href="manage-scripts.htm">Handling Scripts</a></li>
+              <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+            </ul></td>
+          </tr>
+          <tr>
+            <td class="chapter"><img src="../px/ico/nod-.png" width="15" height="11"><a href="scripts.htm">Scripts</a></td>
+          </tr>
+          <tr>
+            <td><ul>
+              <li><a href="aerograph.htm">Aerograph</a></li>
+              <li><a href="burnt-edges.htm">Burnt Edges</a></li>
+              <li><a href="close-others.htm">Close Other Docs</a></li>
+              <li><a href="confetti.htm">Confetti</a></li>
+              <li><a href="cross-processing.htm">Cross Processing</a></li>
+              <li><a href="disk-label.htm">Disk Label</a></li>
+              <li><a href="extend-canvas.htm">Extend Canvas</a></li>
+              <li><a href="film-edges.htm">Film Edges</a></li>
+              <li><a href="illustration.htm">Illustration</a></li>
+              <li><a href="open-all-recent.htm">Open All Recent</a></li>
+              <li><a href="quick-shadow.htm">Quick Shadow</a></li>
+              <li><a href="torn-edges.htm">Torn Edges</a></li>
+              <li><a href="water-drops.htm">Water Drops</a></li>
+              <li><a href="wavy-edges.htm">Wavy Edges</a></li>
+            </ul></td>
+          </tr>
+          <tr>
+            <td class="chapter"><a href="http://script-arsenal.com/buy-script-arsenal.htm">Get full version</a></td>
+          </tr>
+        </table>
+      </div></td>
+  <td valign="top" class="text"><p>1.
+    In the Windows environment, dragging a script dialog across the document window may cause artifacts shown on screenshot 2. To get rid of those, just click the &quot;Refresh&quot; <img src="../px/refresh-btn.gif" alt="Refresh button" width="16" height="13" align="absmiddle"> button. 
+  <p align="center"><img src="../px/app-refresh.png" alt="Refreshing image view" width="487" height="656">        
+    <p>2.      
+In some cases, launching the mentioned scripts from the &quot;Script Arsenal&quot; dialog may cause Photoshop losing focus (in other words, some other application's window becoming the front one). To avoid this, run the problem scripts from either the <a href="script-to-menu.htm">menu</a> or the <a href="script-to-action.htm">Actions</a> panel.
+    <p><a name="error1" id="error1"></a>3. Some users report that  any script  that opens a dialog crashes with &quot;Unable to create Window&quot; error message:</p>
+    <p align="center"><img src="../px/unable-to-create-window-error.jpg" width="363" height="189"></p>
+    <p>Unfortunately, this is a bug  in Adobe's script engine known to users of Photoshop CS3 and CS4. As a rule, this problem resolves itself after several computer re-boots. However, if in your case the problem persists, the author can suggest the only solution - using the scripts that don't open dialogs (to get to know which ones, please, see the <a href="scripts.htm">documentation</a>). To launch such a script, either add it to &quot;File &gt; Scripts&quot; menu (by copying the proper JSX files to &lt;Photoshop&gt;/Presets/Scripts&quot; folder), or by creating an <a href="script-to-action.htm">action</a>.</p>
+    <table class="arr">
+      <tr align="center" valign="middle">
+        <td align="right"><a href="manage-scripts.htm"><img src="../px/prev.gif" alt="Previous" width="18" height="19"></a></td>
+        <td width="60"></td>
+        <td align="left"><a href="scripts.htm"><img src="../px/next.gif" alt="Next" width="18" height="19"></a></td>
+        </tr>
+    </table></td>
+  </tr>
+</table>
+</body>
+</html>

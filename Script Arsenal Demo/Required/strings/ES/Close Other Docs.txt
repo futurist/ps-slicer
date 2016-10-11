@@ -1,0 +1,1 @@
+Este script cierra sin guardar (!) todas las imágenes abiertas, **excepto para el documento activo. ~ Cerrar otras imágenes ~ ß
